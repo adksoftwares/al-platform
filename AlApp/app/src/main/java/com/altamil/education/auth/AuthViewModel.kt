@@ -75,9 +75,13 @@ class AuthViewModel : ViewModel() {
     private fun migrateLegacyAccount(email: String, suppliedPassword: String) {
         auth.signInWithEmailAndPassword(email, legacyFirebasePassword(email))
             .addOnCompleteListener { legacyTask ->
-                val user = legacyTask.result.user
-                if (!legacyTask.isSuccessful || user == null) {
+                if (!legacyTask.isSuccessful) {
                     _authState.value = AuthState.Error("Invalid email or password. If this is an older account, use password reset.")
+                    return@addOnCompleteListener
+                }
+                val user = legacyTask.result.user
+                if (user == null) {
+                    _authState.value = AuthState.Error("Could not load this older account. Use password reset.")
                     return@addOnCompleteListener
                 }
 
