@@ -8,7 +8,7 @@
         ".write": "auth != null && auth.token.admin == true"
       },
       "payment_config": {
-        ".read": "auth != null",
+        ".read": "auth != null && auth.token.admin == true",
         ".write": "auth != null && auth.token.admin == true"
       },
       "premium_codes": {
@@ -58,8 +58,7 @@
       ".read": "auth != null && auth.token.admin == true",
       "$transferId": {
         ".read": "auth != null && (auth.token.admin == true || data.child('uid').val() == auth.uid)",
-        ".write": "auth != null && (auth.token.admin == true || (!data.exists() && newData.child('uid').val() == auth.uid))",
-        ".validate": "newData.hasChildren(['uid'])"
+        ".write": "auth != null && (auth.token.admin == true || (!data.exists() && newData.child('uid').val() == auth.uid))"
       }
     },
     "suggestions": {
