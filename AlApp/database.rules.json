@@ -1,69 +1,112 @@
 {
   "rules": {
+    ".read": false,
+    ".write": false,
     "admin_settings": {
-      ".read": "auth != null && (auth.token.email == 'admin@example.com' || auth.token.email == 'arikarran14@gmail.com' || root.child('users').child(auth.uid).child('isAdmin').val() == true)",
-      ".write": "auth != null && (auth.token.email == 'admin@example.com' || auth.token.email == 'arikarran14@gmail.com' || root.child('users').child(auth.uid).child('isAdmin').val() == true)",
       "bank_details": {
         ".read": "auth != null",
+        ".write": "auth != null && auth.token.admin == true",
         ".validate": "newData.hasChildren(['accountName', 'accountNumber', 'bankName', 'branch'])"
       },
       "payment_config": {
-        ".read": "auth != null"
+        ".read": "auth != null",
+        ".write": "auth != null && auth.token.admin == true"
+      },
+      "premium_codes": {
+        ".read": false,
+        ".write": "auth != null && auth.token.admin == true"
       },
       "github_token": {
+        ".read": "auth != null && auth.token.admin == true",
+        ".write": "auth != null && auth.token.admin == true",
         ".validate": "newData.isString()"
+      },
+      "gemini_api_key": {
+        ".read": false,
+        ".write": "auth != null && auth.token.admin == true"
+      },
+      "$other": {
+        ".read": "auth != null && auth.token.admin == true",
+        ".write": "auth != null && auth.token.admin == true"
       }
     },
     "users": {
-      ".read": "auth != null && (auth.token.email == 'admin@example.com' || auth.token.email == 'arikarran14@gmail.com' || root.child('users').child(auth.uid).child('isAdmin').val() == true)",
+      ".read": "auth != null && auth.token.admin == true",
       "$uid": {
-        ".read": "auth != null && (auth.uid == $uid || auth.token.email == 'admin@example.com' || auth.token.email == 'arikarran14@gmail.com' || root.child('users').child(auth.uid).child('isAdmin').val() == true)",
-        ".write": "auth != null && (auth.uid == $uid || auth.token.email == 'admin@example.com' || auth.token.email == 'arikarran14@gmail.com' || root.child('users').child(auth.uid).child('isAdmin').val() == true)"
+        ".read": "auth != null && (auth.uid == $uid || auth.token.admin == true)",
+        ".write": "auth != null && (auth.uid == $uid || auth.token.admin == true)",
+        "isAdmin": {
+          ".validate": "auth.token.admin == true || (!newData.exists() && !data.exists()) || (newData.val() == data.val())"
+        },
+        "isPremium": {
+          ".validate": "auth.token.admin == true || (!data.exists() && newData.val() == false) || (newData.val() == data.val())"
+        },
+        "premiumExpiry": {
+          ".validate": "auth.token.admin == true || (!newData.exists() && !data.exists()) || (newData.val() == data.val())"
+        },
+        "premiumValidUntil": {
+          ".validate": "auth.token.admin == true || (!newData.exists() && !data.exists()) || (newData.val() == data.val())"
+        },
+        "freeDownloadsCount": {
+          ".validate": "auth.token.admin == true || (!data.exists() && newData.val() == 0) || (newData.val() == data.val())"
+        },
+        "password": {
+          ".validate": "auth.token.admin == true || (!newData.exists()) || (newData.val() == data.val())"
+        }
       }
     },
     "bank_transfers": {
-      ".read": "auth != null && (auth.token.email == 'admin@example.com' || auth.token.email == 'arikarran14@gmail.com' || root.child('users').child(auth.uid).child('isAdmin').val() == true)",
-      ".write": "auth != null"
+      ".read": "auth != null && auth.token.admin == true",
+      "$transferId": {
+        ".read": "auth != null && (auth.token.admin == true || data.child('uid').val() == auth.uid)",
+        ".write": "auth != null && (auth.token.admin == true || (!data.exists() && newData.child('uid').val() == auth.uid))",
+        ".validate": "newData.hasChildren(['uid'])"
+      }
     },
     "suggestions": {
-      ".read": "auth != null && (auth.token.email == 'admin@example.com' || auth.token.email == 'arikarran14@gmail.com' || root.child('users').child(auth.uid).child('isAdmin').val() == true)",
-      ".write": "auth != null",
-      "$suggestion_id": {
-        ".validate": "newData.hasChildren(['fileName', 'subject', 'folder', 'downloadUrl'])"
+      ".read": "auth != null && auth.token.admin == true",
+      "$suggestionId": {
+        ".write": "auth != null && (auth.token.admin == true || (!data.exists() && newData.child('uid').val() == auth.uid))",
+        ".validate": "newData.hasChildren(['fileName', 'subject', 'folder', 'downloadUrl']) && (auth.token.admin == true || newData.child('uid').val() == auth.uid)"
       }
     },
     "pending_suggestions": {
-      ".read": "auth != null && (auth.token.email == 'admin@example.com' || auth.token.email == 'arikarran14@gmail.com' || root.child('users').child(auth.uid).child('isAdmin').val() == true)",
-      ".write": "auth != null"
+      ".read": "auth != null && auth.token.admin == true",
+      "$suggestionId": {
+        ".write": "auth != null && (auth.token.admin == true || (!data.exists() && newData.child('uid').val() == auth.uid))",
+        ".validate": "auth.token.admin == true || newData.child('uid').val() == auth.uid"
+      }
     },
     "pending_approvals": {
-      ".read": "auth != null && (auth.token.email == 'admin@example.com' || auth.token.email == 'arikarran14@gmail.com' || root.child('users').child(auth.uid).child('isAdmin').val() == true)",
-      ".write": "auth != null"
+      ".read": "auth != null && auth.token.admin == true",
+      "$approvalId": {
+        ".write": "auth != null && auth.token.admin == true",
+        ".validate": "auth.token.admin == true"
+      }
     },
     "daily_quizzes_v4": {
       ".read": "auth != null",
-      ".write": "auth != null && (auth.token.email == 'admin@example.com' || auth.token.email == 'arikarran14@gmail.com' || root.child('users').child(auth.uid).child('isAdmin').val() == true)"
+      ".write": "auth != null && auth.token.admin == true"
     },
     "folders": {
       ".read": "auth != null",
-      ".write": "auth != null && (auth.token.email == 'admin@example.com' || auth.token.email == 'arikarran14@gmail.com' || root.child('users').child(auth.uid).child('isAdmin').val() == true)"
+      ".write": "auth != null && auth.token.admin == true"
     },
     "files": {
       ".read": "auth != null",
-      ".write": "auth != null && (auth.token.email == 'admin@example.com' || auth.token.email == 'arikarran14@gmail.com' || root.child('users').child(auth.uid).child('isAdmin').val() == true)",
-      
+      ".write": "auth != null && auth.token.admin == true",
       "$subject": {
         "elaborations": {
           ".read": "auth != null",
-          ".write": "auth != null && (auth.token.email == 'admin@example.com' || auth.token.email == 'arikarran14@gmail.com' || root.child('users').child(auth.uid).child('isAdmin').val() == true)"
+          ".write": "auth != null && auth.token.admin == true"
         },
         "past papers": {
-          ".read": "auth != null && (root.child('users').child(auth.uid).child('isPremium').val() == true || auth.token.email == 'admin@example.com' || auth.token.email == 'arikarran14@gmail.com' || root.child('users').child(auth.uid).child('isAdmin').val() == true)",
-          ".write": "auth != null && (auth.token.email == 'admin@example.com' || auth.token.email == 'arikarran14@gmail.com' || root.child('users').child(auth.uid).child('isAdmin').val() == true)"
+          ".read": "auth != null && (root.child('users').child(auth.uid).child('isPremium').val() == true || auth.token.admin == true)",
+          ".write": "auth != null && auth.token.admin == true"
         },
         "Notes": {
-          ".read": "auth != null && (root.child('users').child(auth.uid).child('isPremium').val() == true || auth.token.email == 'admin@example.com' || auth.token.email == 'arikarran14@gmail.com' || root.child('users').child(auth.uid).child('isAdmin').val() == true)",
-          ".write": "auth != null && (auth.token.email == 'admin@example.com' || auth.token.email == 'arikarran14@gmail.com' || root.child('users').child(auth.uid).child('isAdmin').val() == true)"
+          ".read": "auth != null && (root.child('users').child(auth.uid).child('isPremium').val() == true || auth.token.admin == true)",
+          ".write": "auth != null && auth.token.admin == true"
         }
       }
     }
