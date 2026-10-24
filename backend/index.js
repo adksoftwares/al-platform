@@ -4,8 +4,30 @@ const admin = require('firebase-admin');
 
 const app = express();
 app.disable('x-powered-by');
+const trustedProxyHops = Number.parseInt(process.env.TRUST_PROXY_HOPS || '0', 10);
+app.set('trust proxy', Number.isInteger(trustedProxyHops) && trustedProxyHops >= 0 ? trustedProxyHops : 0);
 app.use(express.urlencoded({ extended: false, limit: '16kb' }));
 app.use(express.json({ limit: '16kb' }));
+
+const allowedOrigins = (process.env.CORS_ALLOWED_ORIGINS || '')
+  .split(',')
+  .map((origin) => origin.trim())
+  .filter(Boolean);
+app.use((req, res, next) => {
+  const origin = req.get('origin');
+  if (origin && allowedOrigins.includes(origin)) {
+    res.set('Access-Control-Allow-Origin', origin);
+    res.set('Vary', 'Origin');
+    res.set('Access-Control-Allow-Headers', 'Authorization, Content-Type');
+    res.set('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  }
+  if (req.method === 'OPTIONS') {
+    return origin && allowedOrigins.includes(origin)
+      ? res.status(204).end()
+      : res.status(403).end();
+  }
+  return next();
+});
 
 const PREMIUM_AMOUNT = '500.00';
 const PREMIUM_CURRENCY = 'LKR';
@@ -30,7 +52,7 @@ function normalizeAmount(value) {
 
 function rateLimit(req, res, next) {
   // Do not trust X-Forwarded-For unless a known proxy is explicitly configured.
-  const key = req.socket.remoteAddress || req.ip || 'unknown';
+  const key = req.ip || req.socket.remoteAddress || 'unknown';
   if (rateLimits.size > 10000) {
     const cutoff = Date.now() - WINDOW_MS;
     for (const [ip, entry] of rateLimits) {
