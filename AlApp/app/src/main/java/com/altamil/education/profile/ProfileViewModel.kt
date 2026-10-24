@@ -48,6 +48,13 @@ data class UserProfileState(
     val isLoading: Boolean = true,
 )
 
+private data class DownloadConsumeResult(
+    val status: Int,
+    val allowed: Boolean,
+    val message: String?,
+    val count: Int,
+)
+
 class ProfileViewModel : ViewModel() {
     private val auth = FirebaseAuth.getInstance()
     private val database = FirebaseDatabase.getInstance().getReference("users")
@@ -146,15 +153,19 @@ class ProfileViewModel : ViewModel() {
                     http.newCall(request).execute().use { response ->
                         val raw = response.body?.string().orEmpty()
                         val json = try { JSONObject(raw) } catch (_: Exception) { JSONObject() }
-                        Triple(response.code, json.optBoolean("allowed", false), json.optString("error").takeIf { it.isNotBlank() })
-                            .let { Triple(it.first, it.second, it.third to json.optInt("count", -1)) }
+                        DownloadConsumeResult(
+                            status = response.code,
+                            allowed = json.optBoolean("allowed", false),
+                            message = json.optString("error").takeIf { it.isNotBlank() },
+                            count = json.optInt("count", -1),
+                        )
                     }
                 }
 
-                val status = result.first
-                val allowed = result.second
-                val message = result.third.first
-                val count = result.third.second
+                val status = result.status
+                val allowed = result.allowed
+                val message = result.message
+                val count = result.count
                 if (count >= 0) _uiState.value = _uiState.value.copy(freeDownloadsCount = count)
 
                 if (status in 200..299 && allowed) {
