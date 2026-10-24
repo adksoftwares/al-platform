@@ -69,10 +69,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.altamil.education.payment.CheckoutViewModel
-import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.database.FirebaseDatabase
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.tasks.await
 
 @Composable
 fun PremiumCheckoutScreen(
@@ -286,43 +283,15 @@ fun PremiumCheckoutScreen(
                             errorMessage = ""
                             coroutineScope.launch {
                                 try {
-                                    val user = FirebaseAuth.getInstance().currentUser
-                                    if (user == null) {
-                                        errorMessage = "You must be logged in."
-                                        isVerifying = false
-                                        return@launch
-                                    }
-
-                                    // Verify manual access code in Firebase
-                                    val codeRef = FirebaseDatabase.getInstance().getReference("admin_settings/premium_codes/$accessCode")
-                                    val snapshot = codeRef.get().await()
-
-                                    if (snapshot.exists()) {
-                                        val isUsed = snapshot.child("isUsed").getValue(Boolean::class.java) ?: false
-                                        if (isUsed) {
-                                            errorMessage = "This code has already been used."
-                                        } else {
-                                            // Mark code as used
-                                            val updates =
-                                                mapOf(
-                                                    "isUsed" to true,
-                                                    "usedBy" to user.uid,
-                                                    "usedAt" to System.currentTimeMillis(),
-                                                )
-                                            codeRef.updateChildren(updates).await()
-
-                                            // Upgrade User
-                                            successMessage = "Code Verified! Unlocking Premium..."
-                                            viewModel.unlockPremiumStatus(
-                                                onSuccess = { onPaymentComplete() },
-                                                onError = { e -> errorMessage = "Failed to unlock: $e" },
-                                            )
-                                        }
+                                    val result = viewModel.redeemAccessCode(accessCode)
+                                    if (result == null) {
+                                        successMessage = "Code verified! Premium is now active."
+                                        onPaymentComplete()
                                     } else {
-                                        errorMessage = "Invalid Access Code."
+                                        errorMessage = result
                                     }
-                                } catch (e: Exception) {
-                                    errorMessage = "Error verifying code: ${e.message}"
+                                } catch (_: Exception) {
+                                    errorMessage = "Could not verify the access code. Please try again."
                                 } finally {
                                     isVerifying = false
                                 }
