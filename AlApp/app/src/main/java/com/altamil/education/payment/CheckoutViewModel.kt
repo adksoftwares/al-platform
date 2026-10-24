@@ -15,37 +15,71 @@
  */
 package com.altamil.education.payment
 
-import androidx.lifecycle.ViewModel
+import com.altamil.education.BuildConfig
 import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.database.FirebaseDatabase
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.tasks.await
+import kotlinx.coroutines.withContext
+import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.OkHttpClient
+import okhttp3.Request
+import okhttp3.RequestBody.Companion.toRequestBody
+import org.json.JSONObject
+import java.io.IOException
+import java.util.concurrent.TimeUnit
 
-class CheckoutViewModel : ViewModel() {
+class CheckoutViewModel : androidx.lifecycle.ViewModel() {
     private val auth = FirebaseAuth.getInstance()
-    private val database = FirebaseDatabase.getInstance().reference
+    private val http = OkHttpClient.Builder()
+        .connectTimeout(10, TimeUnit.SECONDS)
+        .readTimeout(15, TimeUnit.SECONDS)
+        .callTimeout(20, TimeUnit.SECONDS)
+        .build()
 
-    fun unlockPremiumStatus(
-        onSuccess: () -> Unit,
-        onError: (String) -> Unit,
-    ) {
-        val uid = auth.currentUser?.uid
-        if (uid != null) {
-            val expiry = System.currentTimeMillis() + (30L * 24L * 60L * 60L * 1000L) // 30 days
-            val updates =
-                mapOf(
-                    "isPremium" to true,
-                    "premiumExpiry" to expiry,
-                )
-            database
-                .child("users")
-                .child(uid)
-                .updateChildren(updates)
-                .addOnSuccessListener {
-                    onSuccess()
-                }.addOnFailureListener {
-                    onError(it.message ?: "Unknown error")
+    /**
+     * Redeem through the trusted backend. The Android client never reads
+     * premium_codes or writes isPremium/premiumExpiry directly.
+     *
+     * @return null on success, otherwise a safe message suitable for display.
+     */
+    suspend fun redeemAccessCode(code: String): String? = withContext(Dispatchers.IO) {
+        val baseUrl = BuildConfig.BACKEND_BASE_URL.trim().trimEnd('/')
+        if (!baseUrl.startsWith("https://")) {
+            return@withContext "Premium service is not configured. Please contact support."
+        }
+
+        val user = auth.currentUser
+            ?: return@withContext "You must be logged in."
+        val token = try {
+            user.getIdToken(false).await().token
+        } catch (_: Exception) {
+            null
+        } ?: return@withContext "Your session expired. Please log in again."
+
+        val payload = JSONObject().put("code", code.trim().uppercase()).toString()
+            .toRequestBody("application/json; charset=utf-8".toMediaType())
+        val request = Request.Builder()
+            .url("$baseUrl/api/premium/redeem")
+            .header("Authorization", "Bearer $token")
+            .post(payload)
+            .build()
+
+        try {
+            http.newCall(request).execute().use { response ->
+                val responseText = response.body?.string().orEmpty()
+                if (response.isSuccessful) {
+                    null
+                } else {
+                    val message = try {
+                        JSONObject(responseText).optString("error")
+                    } catch (_: Exception) {
+                        ""
+                    }
+                    message.ifBlank { "Could not verify the access code. Please try again." }
                 }
-        } else {
-            onError("User not authenticated")
+            }
+        } catch (_: IOException) {
+            "Could not connect to the premium service. Check your internet connection and try again."
         }
     }
 }
