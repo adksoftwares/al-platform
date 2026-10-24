@@ -1,0 +1,115 @@
+Message 0:
+Text: 'Next page: /b_elaboration__page2'
+Has Document: False
+Button 0,0: 📘 SYLLABUS / GUIDE 📘
+Button 0,1: 📚 Resource Books 📚
+Button 1,0: 🍃புதிய பாடத்திட்ட அலகுரீதியான குறிப்புகள்🍃
+Button 2,0: 📚தவணை பரீட்சை வினாத்தாள்கள்📚
+Button 3,0: 🔰 பிரபல ஆசிரியர்களின் பரீட்சை🔰
+Button 4,0: 🔮 BOOKS / TUTES 🔮
+Button 4,1: ♨️ விளக்கவுரை ♨️
+Button 5,0: 🏮முன்னோடி பரீட்சை வினாத்தாள்கள்🏮
+Button 6,0: 📌 கடந்தகால பரீட்சை 📌
+Button 7,0: 📒அலகுரீதியான வினாதொகுப்பு📒
+Button 8,0: 🗺 SHORTS NOTES / MINDMAPS 🗺
+Button 9,0: 💢கல்வி திணைக்கள வினாத்தாள்கள்💢
+Button 10,0: 📕பழைய பாடத்திட்ட அலகுரீதியான குறிப்புகள்📕
+Button 11,0: 🎥 காணொளிகள்📹
+Button 11,1: 🌀 OLYMPIAD PAPERS 🌀
+Button 12,0: ⚡️ ENGLISH MEDIUM ⚡️
+Button 12,1: 🌳 MAGAZINE 🌳
+Button 13,0: 👨‍🎓மாணவர் ஆக்கங்கள்📚🖌
+Button 14,0: Go Back
+----------------------------------------
+Message 1:
+Text: ''
+Has Document: False
+Button 0,0: 📘 SYLLABUS / GUIDE 📘
+Button 0,1: 📚 Resource Books 📚
+Button 1,0: 🍃புதிய பாடத்திட்ட அலகுரீதியான குறிப்புகள்🍃
+Button 2,0: 📚தவணை பரீட்சை வினாத்தாள்கள்📚
+Button 3,0: 🔰 பிரபல ஆசிரியர்களின் பரீட்சை🔰
+Button 4,0: 🔮 BOOKS / TUTES 🔮
+Button 4,1: ♨️ விளக்கவுரை ♨️
+Button 5,0: 🏮முன்னோடி பரீட்சை வினாத்தாள்கள்🏮
+Button 6,0: 📌 கடந்தகால பரீட்சை 📌
+Button 7,0: 📒அலகுரீதியான வினாதொகுப்பு📒
+Button 8,0: 🗺 SHORTS NOTES / MINDMAPS 🗺
+Button 9,0: 💢கல்வி திணைக்கள வினாத்தாள்கள்💢
+Button 10,0: 📕பழைய பாடத்திட்ட அலகுரீதியான குறிப்புகள்📕
+Button 11,0: 🎥 காணொளிகள்📹
+Button 11,1: 🌀 OLYMPIAD PAPERS 🌀
+Button 12,0: ⚡️ ENGLISH MEDIUM ⚡️
+Button 12,1: 🌳 MAGAZINE 🌳
+Button 13,0: 👨‍🎓மாணவர் ஆக்கங்கள்📚🖌
+Button 14,0: Go Back
+----------------------------------------
+Message 2:
+Text: '📚🖌📚🖌📚🖌📚🖌📚'
+Has Document: False
+Button 0,0: 📘 SYLLABUS / GUIDE 📘
+Button 0,1: 📚 Resource Books 📚
+Button 1,0: 🍃புதிய பாடத்திட்ட அலகுரீதியான குறிப்புகள்🍃
+Button 2,0: 📚தவணை பரீட்சை வினாத்தாள்கள்📚
+Button 3,0: 🔰 பிரபல ஆசிரியர்களின் பரீட்சை🔰
+Button 4,0: 🔮 BOOKS / TUTES 🔮
+Button 4,1: ♨️ விளக்கவுரை ♨️
+Button 5,0: 🏮முன்னோடி பரீட்சை வினாத்தாள்கள்🏮
+Button 6,0: 📌 கடந்தகால பரீட்சை 📌
+Button 7,0: 📒அலகுரீதியான வினாதொகுப்பு📒
+Button 8,0: 🗺 SHORTS NOTES / MINDMAPS 🗺
+Button 9,0: 💢கல்வி திணைக்கள வினாத்தாள்கள்💢
+Button 10,0: 📕பழைய பாடத்திட்ட அலகுரீதியான குறிப்புகள்📕
+Button 11,0: 🎥 காணொளிகள்📹
+Button 11,1: 🌀 OLYMPIAD PAPERS 🌀
+Button 12,0: ⚡️ ENGLISH MEDIUM ⚡️
+Button 12,1: 🌳 MAGAZINE 🌳
+Button 13,0: 👨‍🎓மாணவர் ஆக்கங்கள்📚🖌
+Button 14,0: Go Back
+----------------------------------------
+Message 3:
+Text: ''
+Has Document: True
+Button 0,0: 📘 SYLLABUS / GUIDE 📘
+Button 0,1: 📚 Resource Books 📚
+Button 1,0: 🍃புதிய பாடத்திட்ட அலகுரீதியான குறிப்புகள்🍃
+Button 2,0: 📚தவணை பரீட்சை வினாத்தாள்கள்📚
+Button 3,0: 🔰 பிரபல ஆசிரியர்களின் பரீட்சை🔰
+Button 4,0: 🔮 BOOKS / TUTES 🔮
+Button 4,1: ♨️ விளக்கவுரை ♨️
+Button 5,0: 🏮முன்னோடி பரீட்சை வினாத்தாள்கள்🏮
+Button 6,0: 📌 கடந்தகால பரீட்சை 📌
+Button 7,0: 📒அலகுரீதியான வினாதொகுப்பு📒
+Button 8,0: 🗺 SHORTS NOTES / MINDMAPS 🗺
+Button 9,0: 💢கல்வி திணைக்கள வினாத்தாள்கள்💢
+Button 10,0: 📕பழைய பாடத்திட்ட அலகுரீதியான குறிப்புகள்📕
+Button 11,0: 🎥 காணொளிகள்📹
+Button 11,1: 🌀 OLYMPIAD PAPERS 🌀
+Button 12,0: ⚡️ ENGLISH MEDIUM ⚡️
+Button 12,1: 🌳 MAGAZINE 🌳
+Button 13,0: 👨‍🎓மாணவர் ஆக்கங்கள்📚🖌
+Button 14,0: Go Back
+----------------------------------------
+Message 4:
+Text: ''
+Has Document: False
+Button 0,0: 📘 SYLLABUS / GUIDE 📘
+Button 0,1: 📚 Resource Books 📚
+Button 1,0: 🍃புதிய பாடத்திட்ட அலகுரீதியான குறிப்புகள்🍃
+Button 2,0: 📚தவணை பரீட்சை வினாத்தாள்கள்📚
+Button 3,0: 🔰 பிரபல ஆசிரியர்களின் பரீட்சை🔰
+Button 4,0: 🔮 BOOKS / TUTES 🔮
+Button 4,1: ♨️ விளக்கவுரை ♨️
+Button 5,0: 🏮முன்னோடி பரீட்சை வினாத்தாள்கள்🏮
+Button 6,0: 📌 கடந்தகால பரீட்சை 📌
+Button 7,0: 📒அலகுரீதியான வினாதொகுப்பு📒
+Button 8,0: 🗺 SHORTS NOTES / MINDMAPS 🗺
+Button 9,0: 💢கல்வி திணைக்கள வினாத்தாள்கள்💢
+Button 10,0: 📕பழைய பாடத்திட்ட அலகுரீதியான குறிப்புகள்📕
+Button 11,0: 🎥 காணொளிகள்📹
+Button 11,1: 🌀 OLYMPIAD PAPERS 🌀
+Button 12,0: ⚡️ ENGLISH MEDIUM ⚡️
+Button 12,1: 🌳 MAGAZINE 🌳
+Button 13,0: 👨‍🎓மாணவர் ஆக்கங்கள்📚🖌
+Button 14,0: Go Back
+----------------------------------------

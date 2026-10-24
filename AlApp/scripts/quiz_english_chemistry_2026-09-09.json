@@ -1,0 +1,112 @@
+[
+  {
+    "question": "According to the common-ion effect, if the equilibrium in a saturated solution of AgCl(s) = Ag+(aq) + Cl-(aq) is caused to shift to the left, which of the following statements is correct?",
+    "options": [
+      "The rate of crystallization is increased and its solubility decreases.",
+      "The rate of dissolving is increased and its solubility increases.",
+      "The rate of crystallization is decreased and its solubility increases.",
+      "The rate of dissolving is decreased and its solubility decreases."
+    ],
+    "answerIndex": 0,
+    "rationale": "The resource book states: 'If we cause the equilibrium to shift to the left then the rate of crystallization is increased more than the rate of dissolving. More Ag+ ions and Cl- ions will combine to form solid AgCl and its solubility decreases.'"
+  },
+  {
+    "question": "The solubility of PbCl2(s) can be increased by which of the following actions?",
+    "options": [
+      "Decreasing [Pb2+(aq)]",
+      "Increasing [Pb2+(aq)]",
+      "Increasing [Cl-(aq)]",
+      "Increasing the concentration of PbCl2(s)"
+    ],
+    "answerIndex": 0,
+    "rationale": "The resource book states: 'The solubility of the PbCl2(s) can be increased by decreasing either [Pb2+(aq)] or [Cl-(aq)].'"
+  },
+  {
+    "question": "Insoluble basic salts tend to dissolve in which type of solutions?",
+    "options": [
+      "acidic solutions",
+      "basic solutions",
+      "neutral solutions",
+      "alkaline solutions"
+    ],
+    "answerIndex": 0,
+    "rationale": "The resource book states: 'insoluble basic salts tend to dissolve in acidic solutions. Similarly, insoluble acidic solutions tend to dissolve in basic solutions.'"
+  },
+  {
+    "question": "Which type of sparingly soluble salts tend to be more soluble in an acidic solution?",
+    "options": [
+      "Salts derived from weak acids such as fluorides.",
+      "Salts derived from strong acids such as chlorides.",
+      "Salts derived from weak bases such as metal hydroxides.",
+      "Salts containing anions that do not hydrolyze."
+    ],
+    "answerIndex": 0,
+    "rationale": "The resource book states: 'sparingly soluble salts derived from weak acids such as fluorides, oxalates, carbonates, phosphates, etc. tend to be more soluble in an acidic solution.'"
+  },
+  {
+    "question": "The solubilities of salts containing which type of anions are unaffected by pH?",
+    "options": [
+      "Anions that do not hydrolyze.",
+      "Anions that form weak acids.",
+      "Anions that form strong bases.",
+      "Anions such as CO32-."
+    ],
+    "answerIndex": 0,
+    "rationale": "The resource book states: 'the solubilities of salts containing anions (such as Cl, Br, I-) that do not hydrolyze are unaffected by pH.'"
+  },
+  {
+    "question": "In qualitative analysis, Group I cations are characterized by their ability to form which type of precipitates?",
+    "options": [
+      "Insoluble chlorides with dilute HCl.",
+      "Very insoluble sulfides with H2S in acidic solution.",
+      "Very insoluble hydroxides with low hydroxide ion concentration.",
+      "Slightly soluble sulfides with H2S in basic solution."
+    ],
+    "answerIndex": 0,
+    "rationale": "The resource book states: 'Group I (Ag+, Pb2+, Hg22+) cations produce insoluble chlorides so they can be precipitated with dilute HCl, while all other cations remain in solution.'"
+  },
+  {
+    "question": "The low value of K2 for the dissociation of HS-(aq) into H+(aq) and S2-(aq) suggests which of the following regarding free S2- in aqueous solutions?",
+    "options": [
+      "There is very little free S2- unless they are extremely basic.",
+      "There is a high concentration of free S2- in acidic solutions.",
+      "S2- ions readily precipitate with Group II cations in neutral solutions.",
+      "S2- concentration is independent of pH."
+    ],
+    "answerIndex": 0,
+    "rationale": "The resource book states: 'The low value of K2 suggests that there is very little free S2-in aqueous solutions unless they are extremely basic.'"
+  },
+  {
+    "question": "To achieve a specific hydroxide ion concentration for the precipitation of Group III cations, which buffer system is commonly used?",
+    "options": [
+      "Ammonia-ammonium chloride (NH3 / NH4Cl) buffer.",
+      "Acetic acid-sodium acetate (CH3COOH / CH3COONa) buffer.",
+      "Hydrochloric acid-sodium chloride (HCl / NaCl) buffer.",
+      "Sulfuric acid-sodium sulfate (H2SO4 / Na2SO4) buffer."
+    ],
+    "answerIndex": 0,
+    "rationale": "The resource book states: 'To achieve a hydroxide ion concentration of the necessary concentration (about 1 × 10-5 mol dm³) an ammonia-ammonium chloride (NH3 / NH4Cl) buffer is used.'"
+  },
+  {
+    "question": "In a mixture of cations, a specific test to identify Mg2+ is carried out using which reagent, resulting in a yellow-green precipitate or complex?",
+    "options": [
+      "8-hydroxyquinoline",
+      "Dilute HCl",
+      "Hydrogen sulfide (H2S)",
+      "Ammonium carbonate ((NH4)2CO3)"
+    ],
+    "answerIndex": 0,
+    "rationale": "The resource book states: 'a specific test with 8-hydroxyquinoline is carried out to identify Mg2+ by precipitation which forms a yellow-green precipitate or complex.'"
+  },
+  {
+    "question": "Regarding the molecular order in different phases, which of the following statements is correct?",
+    "options": [
+      "Molecules in the solid phase have the greatest order, and those in the gas phase have the greatest randomness.",
+      "Molecules in the liquid phase have the greatest order, and those in the solid phase have the greatest randomness.",
+      "Molecules in the gas phase have the greatest order, and those in the liquid phase have the greatest randomness.",
+      "Molecules in all phases have similar order and randomness at equilibrium."
+    ],
+    "answerIndex": 0,
+    "rationale": "The resource book states: 'molecules in the solid phase have the greatest order, and those in the gas phase have the greatest randomness.'"
+  }
+]

@@ -1,0 +1,30 @@
+{
+  "project_info": {
+    "project_number": "365592581581",
+    "firebase_url": "https://al-students-default-rtdb.asia-southeast1.firebasedatabase.app",
+    "project_id": "al-students",
+    "storage_bucket": "al-students.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:365592581581:android:0cf1566d141b96cff66084",
+        "android_client_info": {
+          "package_name": "com.altamil.education"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA6XxvFiLpLqAlU1N5YlFNaxB2mmTT3N24"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

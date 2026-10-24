@@ -1,0 +1,71 @@
+{
+  "rules": {
+    "admin_settings": {
+      ".read": "auth != null && (auth.token.email == 'admin@example.com' || auth.token.email == 'arikarran14@gmail.com' || root.child('users').child(auth.uid).child('isAdmin').val() == true)",
+      ".write": "auth != null && (auth.token.email == 'admin@example.com' || auth.token.email == 'arikarran14@gmail.com' || root.child('users').child(auth.uid).child('isAdmin').val() == true)",
+      "bank_details": {
+        ".read": "auth != null",
+        ".validate": "newData.hasChildren(['accountName', 'accountNumber', 'bankName', 'branch'])"
+      },
+      "payment_config": {
+        ".read": "auth != null"
+      },
+      "github_token": {
+        ".validate": "newData.isString()"
+      }
+    },
+    "users": {
+      ".read": "auth != null && (auth.token.email == 'admin@example.com' || auth.token.email == 'arikarran14@gmail.com' || root.child('users').child(auth.uid).child('isAdmin').val() == true)",
+      "$uid": {
+        ".read": "auth != null && (auth.uid == $uid || auth.token.email == 'admin@example.com' || auth.token.email == 'arikarran14@gmail.com' || root.child('users').child(auth.uid).child('isAdmin').val() == true)",
+        ".write": "auth != null && (auth.uid == $uid || auth.token.email == 'admin@example.com' || auth.token.email == 'arikarran14@gmail.com' || root.child('users').child(auth.uid).child('isAdmin').val() == true)"
+      }
+    },
+    "bank_transfers": {
+      ".read": "auth != null && (auth.token.email == 'admin@example.com' || auth.token.email == 'arikarran14@gmail.com' || root.child('users').child(auth.uid).child('isAdmin').val() == true)",
+      ".write": "auth != null"
+    },
+    "suggestions": {
+      ".read": "auth != null && (auth.token.email == 'admin@example.com' || auth.token.email == 'arikarran14@gmail.com' || root.child('users').child(auth.uid).child('isAdmin').val() == true)",
+      ".write": "auth != null",
+      "$suggestion_id": {
+        ".validate": "newData.hasChildren(['fileName', 'subject', 'folder', 'downloadUrl'])"
+      }
+    },
+    "pending_suggestions": {
+      ".read": "auth != null && (auth.token.email == 'admin@example.com' || auth.token.email == 'arikarran14@gmail.com' || root.child('users').child(auth.uid).child('isAdmin').val() == true)",
+      ".write": "auth != null"
+    },
+    "pending_approvals": {
+      ".read": "auth != null && (auth.token.email == 'admin@example.com' || auth.token.email == 'arikarran14@gmail.com' || root.child('users').child(auth.uid).child('isAdmin').val() == true)",
+      ".write": "auth != null"
+    },
+    "daily_quizzes_v4": {
+      ".read": "auth != null",
+      ".write": "auth != null && (auth.token.email == 'admin@example.com' || auth.token.email == 'arikarran14@gmail.com' || root.child('users').child(auth.uid).child('isAdmin').val() == true)"
+    },
+    "folders": {
+      ".read": "auth != null",
+      ".write": "auth != null && (auth.token.email == 'admin@example.com' || auth.token.email == 'arikarran14@gmail.com' || root.child('users').child(auth.uid).child('isAdmin').val() == true)"
+    },
+    "files": {
+      ".read": "auth != null",
+      ".write": "auth != null && (auth.token.email == 'admin@example.com' || auth.token.email == 'arikarran14@gmail.com' || root.child('users').child(auth.uid).child('isAdmin').val() == true)",
+      
+      "$subject": {
+        "elaborations": {
+          ".read": "auth != null",
+          ".write": "auth != null && (auth.token.email == 'admin@example.com' || auth.token.email == 'arikarran14@gmail.com' || root.child('users').child(auth.uid).child('isAdmin').val() == true)"
+        },
+        "past papers": {
+          ".read": "auth != null && (root.child('users').child(auth.uid).child('isPremium').val() == true || auth.token.email == 'admin@example.com' || auth.token.email == 'arikarran14@gmail.com' || root.child('users').child(auth.uid).child('isAdmin').val() == true)",
+          ".write": "auth != null && (auth.token.email == 'admin@example.com' || auth.token.email == 'arikarran14@gmail.com' || root.child('users').child(auth.uid).child('isAdmin').val() == true)"
+        },
+        "Notes": {
+          ".read": "auth != null && (root.child('users').child(auth.uid).child('isPremium').val() == true || auth.token.email == 'admin@example.com' || auth.token.email == 'arikarran14@gmail.com' || root.child('users').child(auth.uid).child('isAdmin').val() == true)",
+          ".write": "auth != null && (auth.token.email == 'admin@example.com' || auth.token.email == 'arikarran14@gmail.com' || root.child('users').child(auth.uid).child('isAdmin').val() == true)"
+        }
+      }
+    }
+  }
+}

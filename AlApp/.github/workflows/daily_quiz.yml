@@ -1,0 +1,39 @@
+name: Daily Quiz Generator
+
+on:
+  schedule:
+    # 18:30 UTC is 12:00 AM IST (Sri Lanka time)
+    - cron: '30 18 * * *'
+  workflow_dispatch: # Allows manual trigger from GitHub UI
+
+jobs:
+  generate_quizzes:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        language: [tamil, sinhala, english]
+        subject: [biology, chemistry, physics]
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      - name: Checkout Subjects Materials Repository
+        uses: actions/checkout@v3
+        with:
+          repository: adksoftwares/subjects-materials
+          path: subjects-materials
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: Install Dependencies
+        run: pip install -r scripts/requirements.txt google-genai
+
+      - name: Run Quiz Generator
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: python scripts/generate_and_upload_quizzes.py --base ./subjects-materials/subjects --lang "${{ matrix.language }}" --sub "${{ matrix.subject }}" --db https://al-students-default-rtdb.asia-southeast1.firebasedatabase.app

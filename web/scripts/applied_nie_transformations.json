@@ -1,0 +1,52 @@
+[
+  {
+    "pattern": "சயனைடு",
+    "replacement": "சயனைட்டு",
+    "count": 1
+  },
+  {
+    "pattern": "ஒடுக்கம்",
+    "replacement": "தாழ்த்தல்",
+    "count": 1
+  },
+  {
+    "pattern": "விளைபொருள்",
+    "replacement": "விளைவு",
+    "count": 4
+  },
+  {
+    "pattern": "வேதியியல்",
+    "replacement": "இரசாயனவியல்",
+    "count": 3
+  },
+  {
+    "pattern": "என்ட்ரோபி",
+    "replacement": "அந்திரோபி",
+    "count": 1
+  },
+  {
+    "pattern": "மின்னழுத்தம்",
+    "replacement": "அழுத்தம்",
+    "count": 1
+  },
+  {
+    "pattern": "மின்தேக்கி",
+    "replacement": "கொள்ளளவி",
+    "count": 1
+  },
+  {
+    "pattern": "செரிமானம்",
+    "replacement": "சமிபாடு",
+    "count": 1
+  },
+  {
+    "pattern": "மரபணு",
+    "replacement": "பரம்பரையலகு",
+    "count": 3
+  },
+  {
+    "pattern": "மைட்டோகாண்ட்ரியா",
+    "replacement": "இழைமணி",
+    "count": 6
+  }
+]

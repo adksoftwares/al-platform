@@ -1,0 +1,46 @@
+# Dependencies
+node_modules/
+.gradle/
+build/
+app/build/
+dist/
+.idea/
+.gemini/
+.git_backup
+*/.git_backup
+local.properties
+captures/
+.externalNativeBuild/
+.cxx/
+__pycache__/
+*.pyc
+
+# Environment & Sensitive Credentials
+.env
+.env.*
+!.env.example
+phone_code_hash.txt
+*.session
+*.session-journal
+
+# Large Media, Binaries & Subject Material PDFs (>100MB / GitHub limits)
+subject materials/
+*.pdf
+*.PDF
+*.backup
+*.PDF.backup
+temp_pdfs/
+temp_upload*
+*.apk
+*.zip
+*.exe
+payhere.zip
+payhere_unzipped/
+ocr_tools/
+
+# Temporary Logs & Large Dump Reports
+crash_log*.txt
+job_log*.txt
+*.log
+report_utf8.txt
+word_by_word_check_report.txt

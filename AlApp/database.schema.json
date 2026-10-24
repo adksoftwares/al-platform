@@ -1,0 +1,84 @@
+{
+  "admin_settings": {
+    "bank_details": {
+      "bankName": "Commercial Bank",
+      "accountNumber": "1234567890",
+      "branchName": "Colombo 01"
+    },
+    "github_token": "String (GitHub Personal Access Token for deleting files)"
+  },
+  "users": {
+    "user_uuid_1": {
+      "name": "Arikarran",
+      "email": "arikarran14@gmail.com",
+      "phone": "0771234567",
+      "district": "Colombo",
+      "isPremium": true,
+      "downloadsToday": 5,
+      "lastDownloadDate": "2026-06-11"
+    },
+    "user_uuid_2": {
+      "name": "Free Student",
+      "email": "free@example.com",
+      "phone": "0779876543",
+      "district": "Jaffna",
+      "isPremium": false,
+      "downloadsToday": 1,
+      "lastDownloadDate": "2026-06-11"
+    }
+  },
+  "pending_suggestions": {
+    "suggestion_uuid_1": {
+      "title": "2023 Biology Marking Scheme",
+      "submittedBy": "user_uuid_2",
+      "fileUrl": "https://firebasestorage.googleapis.com/.../file.pdf",
+      "timestamp": 1690000000
+    }
+  },
+  "files": {
+    "biology": {
+      "elaborations": {
+        "file_uuid_1": {
+          "fileName": "Cell Biology Intro.pdf",
+          "uploadDate": "2026-06-01",
+          "fileSize": "2.4 MB",
+          "fileUrl": "https://..."
+        }
+      },
+      "past papers": {
+        "file_uuid_2": {
+          "fileName": "2022 Biology Past Paper.pdf",
+          "uploadDate": "2026-06-05",
+          "fileSize": "5.1 MB",
+          "fileUrl": "https://..."
+        }
+      },
+      "Notes": {}
+    },
+    "chemistry": {
+      "elaborations": {},
+      "past papers": {},
+      "Notes": {}
+    },
+    "physics": {
+      "elaborations": {},
+      "past papers": {},
+      "Notes": {}
+    },
+    "combined maths": {
+      "elaborations": {},
+      "past papers": {},
+      "Notes": {}
+    }
+  },
+  "suggestions": {
+    "suggestion_uuid_1": {
+      "fileName": "String",
+      "subject": "String (biology, chemistry, physics, combined maths)",
+      "folder": "String (elaborations, past papers, Notes)",
+      "downloadUrl": "String (Firebase Storage URL)",
+      "userEmail": "String",
+      "timestamp": "Number"
+    }
+  }
+}
