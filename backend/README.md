@@ -14,12 +14,13 @@ The service fails closed for authentication, premium redemption, and payments wh
 
 ## Endpoints
 
+- `POST /api/downloads/consume`: requires a Firebase ID token and atomically checks the five-free-download limit before incrementing it.
 - `POST /api/premium/redeem`: requires `Authorization: Bearer <Firebase ID token>` and JSON `{"code":"..." }`. The server validates and atomically claims the code, creates a stable grant record, and writes premium status through Firebase Admin SDK.
 - `POST /payhere/create-order`: requires a Firebase ID token. The server fixes the plan price to LKR 500.00 for 30 days, creates a pending order, and returns PayHere checkout fields and a signature.
 - `POST /payhere/notify`: PayHere server-to-server notification endpoint. It validates merchant ID, order, amount, currency, signature, and server-created order state before activating premium. It ignores client-provided user IDs.
 - `GET /healthz`: non-sensitive service health/configuration indicator.
 
-Register `https://YOUR_DEPLOYED_HOST/payhere/notify` as the PayHere notification URL. The app's Android build must be configured with the public HTTPS API origin using the Gradle property `backendBaseUrl`, for example:
+Register `https://YOUR_DEPLOYED_HOST/payhere/notify` as the PayHere notification URL. The web build must have `VITE_BACKEND_BASE_URL=https://YOUR_DEPLOYED_HOST` (see `web/.env.example`). The Android build must be configured with the public HTTPS API origin using the Gradle property `backendBaseUrl`, for example:
 
 ```sh
 ./gradlew assembleRelease -PbackendBaseUrl=https://YOUR_DEPLOYED_HOST
@@ -43,7 +44,7 @@ Do not ship a blank backend URL or an HTTP URL. The app intentionally refuses to
 
 - New web accounts authenticate with the actual user password via Firebase Authentication; passwords are no longer written to Realtime Database. Legacy accounts can migrate on login only if the old stored password matches the password the user provides. Remove any historical plaintext password values after validating account recovery and migration.
 - Password reset uses Firebase's verified email recovery flow. The old client-provided phone + new-password reset flow is intentionally not trusted.
-- Download quotas must be moved to an authenticated server-side atomic endpoint before re-enabling quota increments; client-side increments are not an enforcement mechanism.
+- The current client UI asks the backend to consume a download allowance before opening/downloading a file. This protects the counter from direct client writes, but files hosted at public URLs can still be fetched outside the app; strict enforcement requires a backend proxy or private, short-lived download URLs.
 - The Android manual access-code screen now uses the backend endpoint. Configure the backend URL before release.
 - PayHere order creation is exposed server-side, but the Android PayHere SDK checkout handoff still needs to be connected to these returned fields and verified on a real PayHere sandbox account before enabling paid checkout in production.
 - Premium expiry is written by the trusted backend. Do not reintroduce client writes to entitlement fields.
