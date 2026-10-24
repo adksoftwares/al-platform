@@ -1,5 +1,6 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
+const crypto = require('node:crypto');
 const {
   normalizeAmount,
   payHereCheckoutHash,
@@ -37,5 +38,14 @@ test('checkout and notification signatures are deterministic and distinct', () =
   assert.match(checkout, /^[A-F0-9]{32}$/);
   assert.match(notify, /^[A-F0-9]{32}$/);
   assert.notEqual(checkout, notify);
+  const hashedSecret = crypto.createHash('md5').update(base.secret).digest('hex').toUpperCase();
+  const expectedCheckout = crypto.createHash('md5')
+    .update(base.merchantId + base.orderId + base.amount + base.currency + hashedSecret)
+    .digest('hex').toUpperCase();
+  const expectedNotify = crypto.createHash('md5')
+    .update(base.merchantId + base.orderId + base.amount + base.currency + '2' + hashedSecret)
+    .digest('hex').toUpperCase();
+  assert.equal(checkout, expectedCheckout);
+  assert.equal(notify, expectedNotify);
   assert.equal(checkout, payHereCheckoutHash(base));
 });
