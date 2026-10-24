@@ -17,8 +17,6 @@ export const LoginPage: React.FC = () => {
   // Forgot password modal state
   const [showResetModal, setShowResetModal] = useState(false);
   const [resetEmail, setResetEmail] = useState('');
-  const [resetPhone, setResetPhone] = useState('');
-  const [resetNewPass, setResetNewPass] = useState('');
   const [isResetting, setIsResetting] = useState(false);
   const [resetMessage, setResetMessage] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
 
@@ -44,19 +42,15 @@ export const LoginPage: React.FC = () => {
 
   const handleResetSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!resetEmail.trim() || !resetPhone.trim() || !resetNewPass.trim()) {
-      setResetMessage({ text: 'Please fill in all fields.', type: 'error' });
-      return;
-    }
-    if (resetNewPass.length < 6) {
-      setResetMessage({ text: 'Password must be at least 6 characters.', type: 'error' });
+    if (!resetEmail.trim()) {
+      setResetMessage({ text: 'Enter your registered email address.', type: 'error' });
       return;
     }
 
     setIsResetting(true);
     setResetMessage(null);
 
-    const res = await resetPassword(resetEmail, resetPhone, resetNewPass);
+    const res = await resetPassword(resetEmail);
     setIsResetting(false);
 
     if (res.success) {
@@ -293,7 +287,7 @@ export const LoginPage: React.FC = () => {
         EduHub Sri Lanka • Powered by <span className="text-brand-400 font-bold">ADK Software Solutions</span>
       </footer>
 
-      {/* Direct Password Reset Modal */}
+      {/* Secure email-based password reset modal */}
       <Modal
         isOpen={showResetModal}
         onClose={() => setShowResetModal(false)}
@@ -301,7 +295,7 @@ export const LoginPage: React.FC = () => {
       >
         <form onSubmit={handleResetSubmit} className="space-y-4">
           <p className="text-xs text-slate-400">
-            Enter your registered email address and phone number to instantly update your password.
+            Enter your registered email address and we’ll send a secure password-reset link if the account exists.
           </p>
 
           {resetMessage && (
@@ -334,34 +328,6 @@ export const LoginPage: React.FC = () => {
             />
           </div>
 
-          <div>
-            <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">
-              Registered Phone Number
-            </label>
-            <input
-              type="text"
-              value={resetPhone}
-              onChange={(e) => setResetPhone(e.target.value)}
-              required
-              placeholder="e.g. 0771234567"
-              className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white text-sm focus:outline-none focus:border-brand-500"
-            />
-          </div>
-
-          <div>
-            <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">
-              New Password
-            </label>
-            <input
-              type="password"
-              value={resetNewPass}
-              onChange={(e) => setResetNewPass(e.target.value)}
-              required
-              placeholder="Minimum 6 characters"
-              className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white text-sm focus:outline-none focus:border-brand-500"
-            />
-          </div>
-
           <div className="flex items-center justify-end space-x-3 pt-3">
             <button
               type="button"
@@ -376,7 +342,7 @@ export const LoginPage: React.FC = () => {
               className="px-5 py-2.5 rounded-xl bg-brand-600 hover:bg-brand-500 text-white text-xs font-bold transition flex items-center gap-2 disabled:opacity-50"
             >
               {isResetting && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
-              <span>Save & Update Password</span>
+              <span>Send Reset Link</span>
             </button>
           </div>
         </form>
