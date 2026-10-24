@@ -5,8 +5,7 @@
     "admin_settings": {
       "bank_details": {
         ".read": "auth != null",
-        ".write": "auth != null && auth.token.admin == true",
-        ".validate": "newData.hasChildren(['accountName', 'accountNumber', 'bankName', 'branch'])"
+        ".write": "auth != null && auth.token.admin == true"
       },
       "payment_config": {
         ".read": "auth != null",
@@ -73,15 +72,15 @@
     "pending_suggestions": {
       ".read": "auth != null && auth.token.admin == true",
       "$suggestionId": {
-        ".write": "auth != null && (auth.token.admin == true || (!data.exists() && newData.child('uid').val() == auth.uid))",
-        ".validate": "auth.token.admin == true || newData.child('uid').val() == auth.uid"
+        ".write": "auth != null && (auth.token.admin == true || (!data.exists() && (newData.child('uid').val() == auth.uid || newData.child('submittedBy').val() == auth.uid)))",
+        ".validate": "auth.token.admin == true || newData.child('uid').val() == auth.uid || newData.child('submittedBy').val() == auth.uid"
       }
     },
     "pending_approvals": {
       ".read": "auth != null && auth.token.admin == true",
       "$approvalId": {
-        ".write": "auth != null && auth.token.admin == true",
-        ".validate": "auth.token.admin == true"
+        ".write": "auth != null && (auth.token.admin == true || (!data.exists() && newData.child('userId').val() == auth.uid))",
+        ".validate": "auth.token.admin == true || newData.child('userId').val() == auth.uid"
       }
     },
     "daily_quizzes_v4": {
