@@ -93,4 +93,45 @@ router.post('/premium/redeem', async (req, res) => {
   return res.status(200).json({ success: true, premiumExpiry: Number(grant.expiresAt) });
 });
 
+
+router.post('/downloads/consume', async (req, res) => {
+  try {
+    const uid = await getUid(req, res);
+    if (!uid) return;
+
+    const userRef = admin.database().ref('users').child(uid);
+    let decision = { allowed: false, count: 0 };
+    const result = await userRef.transaction((user) => {
+      if (!user) return;
+      const now = Date.now();
+      const expiry = Number(user.premiumExpiry || user.premiumValidUntil || 0);
+      const premium = user.isPremium === true && (expiry === 0 || expiry > now);
+      const count = Math.max(0, Number(user.freeDownloadsCount || 0));
+
+      if (premium) {
+        decision = { allowed: true, count, premium: true };
+        return user;
+      }
+      if (count >= 5) {
+        decision = { allowed: false, count, premium: false };
+        return user;
+      }
+
+      const nextCount = count + 1;
+      decision = { allowed: true, count: nextCount, premium: false };
+      return { ...user, freeDownloadsCount: nextCount };
+    });
+
+    if (!result.committed || !result.snapshot.exists()) {
+      return res.status(404).json({ error: 'User profile not found.' });
+    }
+    if (!decision.allowed) {
+      return res.status(403).json({ allowed: false, count: decision.count, error: 'Free download limit reached.' });
+    }
+    return res.status(200).json(decision);
+  } catch {
+    return res.status(500).json({ error: 'Could not verify download allowance.' });
+  }
+});
+
 module.exports = router;
