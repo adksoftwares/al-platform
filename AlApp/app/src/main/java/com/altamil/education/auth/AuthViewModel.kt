@@ -68,7 +68,7 @@ class AuthViewModel : ViewModel() {
     private fun checkUserRole(user: FirebaseUser) {
         // Authorization comes only from a server-issued custom claim, never from
         // the client-editable users/{uid}/isAdmin database field.
-        user.getIdTokenResult(true)
+        user.getIdToken(true)
             .addOnSuccessListener { tokenResult ->
                 _authState.value =
                     if (tokenResult.claims["admin"] == true) {
