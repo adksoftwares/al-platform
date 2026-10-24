@@ -62,6 +62,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
+import android.widget.Toast
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import java.text.SimpleDateFormat
@@ -84,19 +85,28 @@ fun PdfViewerScreen(
 ) {
     val profileState by profileViewModel.uiState.collectAsState()
     var showLimitDialog by remember { mutableStateOf(false) }
+    val context = LocalContext.current
 
     val handleFileAction: (action: () -> Unit) -> Unit = { action ->
         if (!profileState.isPremium && profileState.freeDownloadsCount >= 5) {
             showLimitDialog = true
+        } else if (!profileState.isPremium) {
+            profileViewModel.consumeFreeDownload { allowed, message ->
+                if (allowed) {
+                    action()
+                } else if (message?.contains("limit", ignoreCase = true) == true) {
+                    showLimitDialog = true
+                } else {
+                    Toast.makeText(context, message ?: "Could not verify download allowance.", Toast.LENGTH_LONG).show()
+                }
+            }
         } else {
-            if (!profileState.isPremium) profileViewModel.incrementDownloadCount()
             action()
         }
     }
     val files by viewModel.files.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
     val errorMessage by viewModel.errorMessage.collectAsState()
-    val context = LocalContext.current
 
     LaunchedEffect(subjectName, folderName, profileState.language) {
         viewModel.loadFiles(subjectName, folderName, profileState.language)
