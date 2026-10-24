@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import {
-  onAuthStateChanged,
+  onIdTokenChanged,
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
   sendPasswordResetEmail,
@@ -23,8 +23,8 @@ interface AuthContextType {
   resetPassword: (email: string, phone: string, newPass: string) => Promise<{ success: boolean; message: string }>;
   logout: () => Promise<void>;
   updateProfile: (district: string, phone: string, language: string) => Promise<void>;
-  incrementDownloadCount: () => Promise<void>;
-  unlockPremium: () => Promise<void>;
+  incrementDownloadCount: () => Promise<boolean>;
+  redeemPremiumCode: (code: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -60,7 +60,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     let unsubscribeProfile: (() => void) | undefined;
 
-    const unsubscribeAuth = onAuthStateChanged(auth, async (user) => {
+    const unsubscribeAuth = onIdTokenChanged(auth, async (user) => {
       unsubscribeProfile?.();
       unsubscribeProfile = undefined;
       setCurrentUser(user);
@@ -212,15 +212,51 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     });
   };
 
-  const incrementDownloadCount = async () => {
-    // Client-side increments are not an enforceable quota. A trusted backend
-    // endpoint must perform an atomic, authenticated increment before use.
-    throw new Error('Download quota updates must be performed by the secure backend.');
+  const getBackendBaseUrl = () => (import.meta.env.VITE_BACKEND_BASE_URL || '').trim().replace(/\\/+$/, '');
+
+  const incrementDownloadCount = async (): Promise<boolean> => {
+    if (!currentUser) throw new Error('You must be signed in.');
+    const baseUrl = getBackendBaseUrl();
+    if (!baseUrl.startsWith('https://')) throw new Error('Secure download service is not configured.');
+
+    const token = await currentUser.getIdToken();
+    const response = await fetch(`${baseUrl}/api/downloads/consume`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    const result = await response.json().catch(() => ({}));
+    if (response.status === 403 && result.allowed === false) {
+      setUserProfile((profile) => profile ? { ...profile, freeDownloadsCount: Number(result.count || profile.freeDownloadsCount) } : profile);
+      return false;
+    }
+    if (!response.ok) throw new Error(result.error || 'Could not verify download allowance.');
+
+    setUserProfile((profile) => profile ? { ...profile, freeDownloadsCount: Number(result.count ?? profile.freeDownloadsCount) } : profile);
+    return result.allowed === true;
   };
 
-  const unlockPremium = async () => {
-    // Never grant paid entitlements from an untrusted client.
-    throw new Error('Premium access can only be activated after server-side payment or code verification.');
+  const redeemPremiumCode = async (code: string): Promise<void> => {
+    if (!currentUser) throw new Error('You must be signed in.');
+    const baseUrl = getBackendBaseUrl();
+    if (!baseUrl.startsWith('https://')) throw new Error('Secure premium service is not configured.');
+
+    const token = await currentUser.getIdToken();
+    const response = await fetch(`${baseUrl}/api/premium/redeem`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ code: code.trim().toUpperCase() }),
+    });
+    const result = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(result.error || 'Could not verify the access code.');
+
+    setUserProfile((profile) => profile ? {
+      ...profile,
+      isPremium: true,
+      premiumExpiry: Number(result.premiumExpiry || 0),
+    } : profile);
   };
 
   return (
@@ -237,7 +273,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         logout,
         updateProfile,
         incrementDownloadCount,
-        unlockPremium,
+        redeemPremiumCode,
       }}
     >
       {children}
