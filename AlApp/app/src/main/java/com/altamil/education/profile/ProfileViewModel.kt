@@ -80,7 +80,7 @@ class ProfileViewModel : ViewModel() {
                     if (snapshot.exists()) {
                         val dbIsPremium = snapshot.child("isPremium").value as? Boolean ?: false
                         val expiry = snapshot.child("premiumExpiry").value as? Long ?: 0L
-                        val isPremium = dbIsPremium && (expiry == 0L || expiry > System.currentTimeMillis())
+                        val isPremium = dbIsPremium && expiry > System.currentTimeMillis()
 
                         _uiState.value =
                             UserProfileState(
