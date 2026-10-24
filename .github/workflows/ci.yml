@@ -39,6 +39,22 @@ jobs:
       - run: npm ci
       - run: npm run build
 
+  android:
+    name: Android debug build
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: AlApp
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: gradle
+      - uses: gradle/actions/setup-gradle@v4
+      - run: ./gradlew --no-daemon assembleDebug -PbackendBaseUrl=https://api.example.invalid
+
   firebase-rules:
     name: Validate Firebase rules JSON
     runs-on: ubuntu-latest
