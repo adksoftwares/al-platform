@@ -29,7 +29,15 @@ function normalizeAmount(value) {
 }
 
 function rateLimit(req, res, next) {
-  const key = req.ip || req.socket.remoteAddress || 'unknown';
+  // Do not trust X-Forwarded-For unless a known proxy is explicitly configured.
+  const key = req.socket.remoteAddress || req.ip || 'unknown';
+  if (rateLimits.size > 10000) {
+    const cutoff = Date.now() - WINDOW_MS;
+    for (const [ip, entry] of rateLimits) {
+      if (entry.start < cutoff || rateLimits.size > 10000) rateLimits.delete(ip);
+      if (rateLimits.size <= 8000) break;
+    }
+  }
   const now = Date.now();
   const previous = rateLimits.get(key);
   if (!previous || now - previous.start >= WINDOW_MS) {
@@ -246,13 +254,16 @@ app.post('/payhere/notify', async (req, res) => {
     if (grant.uid !== order.uid) return res.status(409).send('Grant owner mismatch.');
 
     const userRef = db.ref('users').child(order.uid);
-    await userRef.transaction((user) => {
-      if (!user) return;
+    const entitlementResult = await userRef.transaction((currentUser) => {
+      const user = currentUser || {};
       const currentExpiry = Number(user.premiumExpiry || user.premiumValidUntil || 0);
       user.isPremium = true;
       user.premiumExpiry = Math.max(currentExpiry, Number(grant.expiresAt));
       return user;
     });
+    if (!entitlementResult.committed || !entitlementResult.snapshot.exists()) {
+      return res.status(500).send('Could not activate premium entitlement.');
+    }
 
     await orderRef.update({
       status: 'paid',
