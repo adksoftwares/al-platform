@@ -31,3 +31,8 @@ test('restricted study files do not inherit a broad authenticated read grant', (
   assert.match(rules.files.$subject['past papers']['.read'], /isPremium/);
   assert.match(rules.files.$subject.Notes['.read'], /isPremium/);
 });
+
+test('signed-in students can check app updates but only trusted admins can publish them', () => {
+  assert.equal(rules.admin_settings.app_version['.read'], 'auth != null');
+  assert.match(rules.admin_settings.app_version['.write'], /auth\.token\.admin == true/);
+});
