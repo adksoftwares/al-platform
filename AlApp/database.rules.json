@@ -98,11 +98,11 @@
           ".write": "auth != null && auth.token.admin == true"
         },
         "past papers": {
-          ".read": "auth != null && (root.child('users').child(auth.uid).child('isPremium').val() == true || auth.token.admin == true)",
+          ".read": "auth != null && ((root.child('users').child(auth.uid).child('isPremium').val() == true && (root.child('users').child(auth.uid).child('premiumExpiry').val() > now || root.child('users').child(auth.uid).child('premiumValidUntil').val() > now)) || auth.token.admin == true)",
           ".write": "auth != null && auth.token.admin == true"
         },
         "Notes": {
-          ".read": "auth != null && (root.child('users').child(auth.uid).child('isPremium').val() == true || auth.token.admin == true)",
+          ".read": "auth != null && ((root.child('users').child(auth.uid).child('isPremium').val() == true && (root.child('users').child(auth.uid).child('premiumExpiry').val() > now || root.child('users').child(auth.uid).child('premiumValidUntil').val() > now)) || auth.token.admin == true)",
           ".write": "auth != null && auth.token.admin == true"
         }
       }
