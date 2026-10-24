@@ -15,6 +15,10 @@
         ".read": false,
         ".write": "auth != null && auth.token.admin == true"
       },
+      "app_version": {
+        ".read": "auth != null",
+        ".write": "auth != null && auth.token.admin == true"
+      },
       "github_token": {
         ".read": "auth != null && auth.token.admin == true",
         ".write": "auth != null && auth.token.admin == true",
