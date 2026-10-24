@@ -5,6 +5,8 @@
 Configure these values in the hosting provider's secret/environment settings. Do not commit service-account JSON or merchant secrets.
 
 - `PORT`: HTTP port supplied by the platform (defaults to `3000`).
+- `CORS_ALLOWED_ORIGINS`: exact comma-separated HTTPS origin(s) for the deployed web app; wildcard origins are not accepted.
+- `TRUST_PROXY_HOPS`: leave `0` unless your hosting provider's trusted reverse-proxy chain is known; set the exact number of trusted hops only after confirming the host configuration.
 - `FIREBASE_DB_URL`: Realtime Database URL for the AL Platform Firebase project.
 - `FIREBASE_SERVICE_ACCOUNT`: the complete Firebase service-account JSON as a single-line secret.
 - `PAYHERE_MERCHANT_ID`: merchant ID from the PayHere dashboard.
