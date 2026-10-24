@@ -45,16 +45,12 @@ class AuthViewModel : ViewModel() {
         }
     }
 
-    private fun legacyFirebasePassword(email: String): String =
-        "AL_App_" + email.hashCode().toString() + "_2026!"
-
     fun login(email: String, pass: String) {
         val cleanEmail = email.trim().lowercase()
         if (cleanEmail.isBlank() || pass.isBlank()) {
             _authState.value = AuthState.Error("Enter your email address and password.")
             return
         }
-
         _authState.value = AuthState.Loading
         auth.signInWithEmailAndPassword(cleanEmail, pass)
             .addOnCompleteListener { task ->
@@ -62,64 +58,10 @@ class AuthViewModel : ViewModel() {
                     task.result.user?.let(::checkUserRole)
                         ?: run { _authState.value = AuthState.Error("Could not load your account.") }
                 } else {
-                    migrateLegacyAccount(cleanEmail, pass)
+                    _authState.value = AuthState.Error(
+                        "Invalid email or password. If this is an older account, use the email password-reset link.",
+                    )
                 }
-            }
-    }
-
-    /**
-     * One-time migration for accounts created by the old app, which stored a
-     * deterministic Firebase password and a plaintext password in Realtime DB.
-     * Never grant access unless the supplied password matches the legacy value.
-     */
-    private fun migrateLegacyAccount(email: String, suppliedPassword: String) {
-        auth.signInWithEmailAndPassword(email, legacyFirebasePassword(email))
-            .addOnCompleteListener { legacyTask ->
-                if (!legacyTask.isSuccessful) {
-                    _authState.value = AuthState.Error("Invalid email or password. If this is an older account, use password reset.")
-                    return@addOnCompleteListener
-                }
-                val user = legacyTask.result.user
-                if (user == null) {
-                    _authState.value = AuthState.Error("Could not load this older account. Use password reset.")
-                    return@addOnCompleteListener
-                }
-
-                database.child(user.uid).addListenerForSingleValueEvent(
-                    object : ValueEventListener {
-                        override fun onDataChange(snapshot: DataSnapshot) {
-                            val legacyPassword = snapshot.child("password").getValue(String::class.java)
-                            if (!snapshot.exists() || legacyPassword.isNullOrBlank() || legacyPassword != suppliedPassword) {
-                                auth.signOut()
-                                _authState.value = AuthState.Error("Could not verify this older account. Use the email password-reset link.")
-                                return
-                            }
-
-                            user.updatePassword(suppliedPassword).addOnCompleteListener { updateTask ->
-                                if (!updateTask.isSuccessful) {
-                                    auth.signOut()
-                                    _authState.value = AuthState.Error("Could not secure this older account. Use password reset and try again.")
-                                    return@addOnCompleteListener
-                                }
-
-                                database.child(user.uid).child("password").removeValue()
-                                    .addOnCompleteListener { removeTask ->
-                                        if (removeTask.isSuccessful) {
-                                            checkUserRole(user)
-                                        } else {
-                                            auth.signOut()
-                                            _authState.value = AuthState.Error("Password updated, but account migration did not finish. Please sign in again.")
-                                        }
-                                    }
-                            }
-                        }
-
-                        override fun onCancelled(error: DatabaseError) {
-                            auth.signOut()
-                            _authState.value = AuthState.Error("Could not verify the account. Check your connection and try again.")
-                        }
-                    },
-                )
             }
     }
 
