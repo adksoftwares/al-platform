@@ -1,12 +1,10 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Crown, Check, Copy, MessageSquare, Key, CheckCircle2, AlertCircle, Loader2, Star } from 'lucide-react';
-import { ref, get, update } from 'firebase/database';
-import { database } from '../../config/firebase';
 import { useAuth } from '../../context/AuthContext';
 
 export const PaymentPage: React.FC = () => {
-  const { currentUser, unlockPremium, isPremium } = useAuth();
+  const { currentUser, redeemPremiumCode, isPremium } = useAuth();
   const navigate = useNavigate();
 
   const [accessCode, setAccessCode] = useState('');
@@ -40,34 +38,13 @@ export const PaymentPage: React.FC = () => {
     setSuccessMessage('');
 
     try {
-      const codeRef = ref(database, `admin_settings/premium_codes/${cleanCode}`);
-      const snapshot = await get(codeRef);
-
-      if (snapshot.exists()) {
-        const codeData = snapshot.val();
-        if (codeData.isUsed) {
-          setErrorMessage('This code has already been redeemed.');
-        } else {
-          // Mark code as used
-          await update(codeRef, {
-            isUsed: true,
-            usedBy: currentUser.uid,
-            usedAt: Date.now(),
-          });
-
-          // Upgrade user to premium
-          await unlockPremium();
-
-          setSuccessMessage('Code verified successfully! Premium features unlocked forever.');
-          setTimeout(() => {
-            navigate('/dashboard');
-          }, 2000);
-        }
-      } else {
-        setErrorMessage('Invalid access code. Please check with admin and try again.');
-      }
-    } catch (err: any) {
-      setErrorMessage(`Error verifying code: ${err.message || 'Network error'}`);
+      await redeemPremiumCode(cleanCode);
+      setSuccessMessage('Code verified successfully! Your 30-day Premium access is now active.');
+      setTimeout(() => {
+        navigate('/dashboard');
+      }, 2000);
+    } catch (err: unknown) {
+      setErrorMessage(err instanceof Error ? err.message : 'Could not verify the access code. Please try again.');
     } finally {
       setIsVerifying(false);
     }
@@ -103,7 +80,7 @@ export const PaymentPage: React.FC = () => {
           <div className="inline-flex p-5 rounded-3xl bg-gradient-to-tr from-yellow-500 to-amber-500 text-slate-950 shadow-2xl shadow-yellow-500/30 mb-2">
             <Crown className="w-12 h-12 fill-slate-950" />
           </div>
-          <h3 className="text-2xl sm:text-3xl font-black text-white">You Have Lifetime Premium!</h3>
+          <h3 className="text-2xl sm:text-3xl font-black text-white">Your 30-Day Premium Is Active</h3>
           <p className="text-sm text-slate-300 max-w-md mx-auto leading-relaxed">
             Your student account has unrestricted access to all Subject Elaborations, Daily AI Quizzes, unlimited PDF downloads, and advanced learning analytics.
           </p>
@@ -124,17 +101,17 @@ export const PaymentPage: React.FC = () => {
               <div>
                 <div className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-white/20 backdrop-blur-md text-xs font-black uppercase tracking-wider mb-3">
                   <Star className="w-4 h-4 fill-yellow-300 text-yellow-300" />
-                  <span>One-Time Lifetime Plan</span>
+                  <span>30-Day Premium Plan</span>
                 </div>
-                <h2 className="text-3xl sm:text-4xl font-black tracking-tight">Lifetime Student Pass</h2>
+                <h2 className="text-3xl sm:text-4xl font-black tracking-tight">30-Day Student Pass</h2>
                 <p className="text-xs sm:text-sm text-brand-100 mt-1.5 max-w-md leading-relaxed">
-                  Gain instant access to all Subject Elaborations, Daily Quizzes with instant AI rationale, and unlimited downloads across all 4 subjects.
+                  Enjoy Premium access to Subject Elaborations, Daily Quizzes with AI explanations, and downloads for 30 days.
                 </p>
               </div>
 
               <div className="text-left sm:text-right shrink-0">
                 <span className="text-4xl sm:text-5xl font-black tracking-tight">Rs. 500</span>
-                <span className="block text-[11px] text-brand-200 mt-1">One-time payment • No subscriptions</span>
+                <span className="block text-[11px] text-brand-200 mt-1">30 days of access • No recurring subscription</span>
               </div>
             </div>
           </div>
@@ -291,7 +268,7 @@ export const PaymentPage: React.FC = () => {
                 ) : (
                   <>
                     <Check className="w-4 h-4" />
-                    <span>Verify & Unlock Lifetime Access</span>
+                    <span>Verify & Unlock 30-Day Access</span>
                   </>
                 )}
               </button>
