@@ -53,7 +53,7 @@ jobs:
           java-version: '17'
           cache: gradle
       - uses: gradle/actions/setup-gradle@v4
-      - run: ./gradlew --no-daemon assembleDebug -PbackendBaseUrl=https://api.example.invalid
+      - run: bash ./gradlew --no-daemon assembleDebug -PbackendBaseUrl=https://api.example.invalid
 
   firebase-rules:
     name: Validate Firebase rules JSON
