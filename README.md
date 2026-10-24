@@ -49,20 +49,27 @@ AL/
 * **Python:** 3.10+
 * **Firebase:** A Firebase Project with Realtime Database & Authentication enabled
 
-### Environment Variables
-Copy `.env.example` to `.env` in the root folder and fill in your credentials:
+### Environment and secrets
+
+The root `.env.example` is for the backend service. Copy it locally and keep the real `.env` file out of Git:
 
 ```bash
 cp .env.example .env
 ```
 
-```env
-FIREBASE_API_KEY=your_firebase_web_api_key
-FIREBASE_EMAIL=your_admin_email@example.com
-FIREBASE_PASSWORD=your_admin_password
-FIREBASE_DB_URL=https://your-project-default-rtdb.firebaseio.com
-GEMINI_API_KEY=your_gemini_api_key
-```
+Configure these values in the backend host's secret manager for deployment:
+
+- `FIREBASE_DB_URL`: the project's Realtime Database URL.
+- `FIREBASE_SERVICE_ACCOUNT`: minified service-account JSON stored only as a server secret.
+- `CORS_ALLOWED_ORIGINS`: exact HTTPS origin(s) of the deployed web portal, comma-separated.
+- `TRUST_PROXY_HOPS`: leave as `0` unless the deployment's reverse-proxy chain is known and configured.
+- `GEMINI_API_KEY`: use a GitHub Actions secret for quiz generation; do not place it in client-side code.
+
+The web Firebase client configuration in `web/src/config/firebase.ts` is public client configuration, not an admin credential. Protect data with Firebase Authentication and Realtime Database rules. **Never add `FIREBASE_EMAIL`, `FIREBASE_PASSWORD`, service-account JSON, or private keys to frontend code or committed files.** Admin access must be granted through a trusted Firebase custom claim (`admin: true`), not by matching an email address or a profile field.
+
+Set `VITE_BACKEND_BASE_URL` in `web/.env` to the deployed backend's HTTPS origin (without an `/api` suffix). For Android, pass the deployed HTTPS backend origin to Gradle with `-PbackendBaseUrl=https://YOUR_DEPLOYED_HOST`. The app updater reads `admin_settings/app_version`; signed-in users can read update metadata, while only a trusted administrator can publish it.
+
+Existing accounts that used the old predictable password scheme must use verified Firebase password recovery before access is restored. Do not reintroduce the legacy fallback.
 
 ### Running the Web Portal
 ```bash
