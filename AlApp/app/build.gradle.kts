@@ -18,7 +18,7 @@ android {
         targetSdk = 36
         versionCode = 3
         versionName = "3.0"
-        buildConfigField("String", "BACKEND_BASE_URL", "\\"$backendBaseUrl\\"")
+        buildConfigField("String", "BACKEND_BASE_URL", "\"$backendBaseUrl\"")
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
