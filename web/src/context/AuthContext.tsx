@@ -212,7 +212,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     });
   };
 
-  const getBackendBaseUrl = () => (import.meta.env.VITE_BACKEND_BASE_URL || '').trim().replace(/\\/+$/, '');
+  const getBackendBaseUrl = () => (import.meta.env.VITE_BACKEND_BASE_URL || '').trim().replace(/\/+$/, '');
 
   const incrementDownloadCount = async (): Promise<boolean> => {
     if (!currentUser) throw new Error('You must be signed in.');
