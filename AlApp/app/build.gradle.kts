@@ -16,6 +16,7 @@ android {
         targetSdk = 36
         versionCode = 3
         versionName = "3.0"
+        buildConfigField("String", "BACKEND_BASE_URL", "\"${providers.gradleProperty("backendBaseUrl").orElse("").get()}\"")
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
@@ -43,6 +44,7 @@ android {
     }
     buildFeatures {
         compose = true
+        buildConfig = true
     }
     packaging {
         resources {
