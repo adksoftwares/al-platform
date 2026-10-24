@@ -20,7 +20,12 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
+      - run: git show HEAD:backend/package-lock.json > /tmp/original-backend-lock.json
       - run: npm install
+      - name: Inspect patched backend lock entries
+        continue-on-error: true
+        run: |
+          node -e "const fs=require('node:fs'); const old=JSON.parse(fs.readFileSync('/tmp/original-backend-lock.json')); const next=JSON.parse(fs.readFileSync('package-lock.json')); const keys=new Set([...Object.keys(old.packages),...Object.keys(next.packages)]); console.log(JSON.stringify([...keys].filter(k=>JSON.stringify(old.packages[k])!==JSON.stringify(next.packages[k])).map(path=>({path,entry:next.packages[path]})),null,2))"
       - run: npm audit --audit-level=high
       - run: npm test
 
