@@ -17,6 +17,7 @@ The service fails closed for authentication, premium redemption, and payments wh
 ## Endpoints
 
 - `POST /api/downloads/consume`: requires a Firebase ID token and atomically checks the five-free-download limit before incrementing it.
+- `POST /api/admin/premium`: requires a Firebase ID token with the trusted `admin: true` claim. Grants 30 days of premium or revokes access, and writes an audit record.
 - `POST /api/premium/redeem`: requires `Authorization: Bearer <Firebase ID token>` and JSON `{"code":"..." }`. The server validates and atomically claims the code, creates a stable grant record, and writes premium status through Firebase Admin SDK.
 - `POST /payhere/create-order`: requires a Firebase ID token. The server fixes the plan price to LKR 500.00 for 30 days, creates a pending order, and returns PayHere checkout fields and a signature.
 - `POST /payhere/notify`: PayHere server-to-server notification endpoint. It validates merchant ID, order, amount, currency, signature, and server-created order state before activating premium. It ignores client-provided user IDs.
@@ -37,7 +38,7 @@ Do not ship a blank backend URL or an HTTP URL. The app intentionally refuses to
    ```sh
    FIREBASE_SERVICE_ACCOUNT='...' FIREBASE_DB_URL='https://...' node scripts/set-admin-claim.js FIREBASE_AUTH_UID
    ```
-   Run this only from a trusted machine/CI secret context. Never place service-account JSON in source control or in the mobile app. The admin must refresh the Firebase ID token after the claim is assigned.
+   Run this only from a trusted machine/CI secret context. Never place service-account JSON in source control or in the mobile app. Use `node scripts/set-admin-claim.js --revoke FIREBASE_AUTH_UID` to revoke a claim. The admin must refresh the Firebase ID token after the claim is assigned or revoked.
 3. Review and deploy `AlApp/database.rules.json` to the correct Realtime Database instance. The rules now use the trusted `auth.token.admin` claim; legacy email allowlists and client-editable `isAdmin` fields are not authorization.
 4. Build the Android app with `-PbackendBaseUrl=https://YOUR_DEPLOYED_HOST`.
 5. Test with a non-admin account that it cannot write `isPremium`, `premiumExpiry`, `premiumValidUntil`, `isAdmin`, `freeDownloadsCount`, or `admin_settings/premium_codes`.
@@ -49,7 +50,7 @@ Do not ship a blank backend URL or an HTTP URL. The app intentionally refuses to
 - The current client UI asks the backend to consume a download allowance before opening/downloading a file. This protects the counter from direct client writes, but files hosted at public URLs can still be fetched outside the app; strict enforcement requires a backend proxy or private, short-lived download URLs.
 - The Android manual access-code screen now uses the backend endpoint. Configure the backend URL before release.
 - PayHere order creation is exposed server-side, but the Android PayHere SDK checkout handoff still needs to be connected to these returned fields and verified on a real PayHere sandbox account before enabling paid checkout in production.
-- Premium expiry is written by the trusted backend. Do not reintroduce client writes to entitlement fields.
+- Premium expiry is written by the trusted backend. Do not reintroduce client writes to entitlement fields. Admin premium toggles now use the audited backend endpoint.
 - After deploying the rules, old hard-coded email admins will lose admin access until a trusted operator assigns custom claims. Confirm the UID and recovery path before deploying to a live project.
 
 ## Tests
