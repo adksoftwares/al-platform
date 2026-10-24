@@ -58,17 +58,23 @@ class FileListViewModel : ViewModel() {
         _errorMessage.value = null
 
         viewModelScope.launch(Dispatchers.IO) {
+            var activeConnection: HttpURLConnection? = null
             try {
-                // Encode to handle spaces in subject/folder names
-                val encodedSubject = URLEncoder.encode(subject, "UTF-8").replace("+", "%20")
-                val encodedFolder = URLEncoder.encode(folder, "UTF-8").replace("+", "%20")
+                // Restrict the language path and encode all user-influenced path segments.
+                val safeLanguage = language.trim().lowercase().takeIf { it in setOf("tamil", "sinhala", "english") } ?: "tamil"
+                val encodedLanguage = URLEncoder.encode(safeLanguage, "UTF-8").replace("+", "%20")
+                val encodedSubject = URLEncoder.encode(subject.trim().lowercase(), "UTF-8").replace("+", "%20")
+                val encodedFolder = URLEncoder.encode(folder.trim().lowercase(), "UTF-8").replace("+", "%20")
 
                 val timestamp = System.currentTimeMillis()
                 val urlString =
                     "https://api.github.com/repos/adksoftwares/subjects-materials/contents/" +
-                        "$language/$encodedSubject/$encodedFolder?t=$timestamp"
+                        "$encodedLanguage/$encodedSubject/$encodedFolder?t=$timestamp"
                 val url = URL(urlString)
                 val connection = url.openConnection() as HttpURLConnection
+                activeConnection = connection
+                connection.connectTimeout = 10_000
+                connection.readTimeout = 15_000
                 connection.requestMethod = "GET"
                 connection.setRequestProperty("Accept", "application/vnd.github.v3+json")
                 connection.setRequestProperty("User-Agent", "AlApp/1.0")
@@ -121,6 +127,7 @@ class FileListViewModel : ViewModel() {
                 _files.value = emptyList()
                 _errorMessage.value = "Error: ${e.message}"
             } finally {
+                activeConnection?.disconnect()
                 _isLoading.value = false
             }
         }
