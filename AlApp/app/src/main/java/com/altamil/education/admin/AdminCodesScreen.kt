@@ -137,7 +137,7 @@ fun AdminCodesScreen() {
                     isGenerating = true
                     coroutineScope.launch {
                         try {
-                            val newCodes = generateRandomCodes(10)
+                            val newCodes = generateRandomCodes(10, codes.map { it.code }.toSet())
                             val updates = mutableMapOf<String, Any>()
                             for (c in newCodes) {
                                 updates[c] =
@@ -286,16 +286,17 @@ fun CodeCard(
     }
 }
 
-fun generateRandomCodes(count: Int): List<String> {
+fun generateRandomCodes(count: Int, existingCodes: Set<String> = emptySet()): List<String> {
     require(count in 1..1000) { "Code count must be between 1 and 1000." }
     val chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
     val random = SecureRandom()
-    val codes = LinkedHashSet<String>()
-    while (codes.size < count) {
+    val knownCodes = existingCodes.toMutableSet()
+    val generated = mutableListOf<String>()
+    while (generated.size < count) {
         val code = buildString(12) {
             repeat(12) { append(chars[random.nextInt(chars.length)]) }
         }
-        codes.add(code)
+        if (knownCodes.add(code)) generated.add(code)
     }
-    return codes.toList()
+    return generated
 }
