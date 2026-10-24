@@ -20,7 +20,7 @@ interface AuthContextType {
   isLoading: boolean;
   login: (email: string, pass: string) => Promise<{ success: boolean; error?: string }>;
   register: (name: string, email: string, pass: string, phone: string, district: string) => Promise<{ success: boolean; error?: string }>;
-  resetPassword: (email: string, phone: string, newPass: string) => Promise<{ success: boolean; message: string }>;
+  resetPassword: (email: string) => Promise<{ success: boolean; message: string }>;
   logout: () => Promise<void>;
   updateProfile: (district: string, phone: string, language: string) => Promise<void>;
   incrementDownloadCount: () => Promise<boolean>;
@@ -178,11 +178,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const resetPassword = async (
-    email: string,
-    _phone: string,
-    _newPass: string,
-  ): Promise<{ success: boolean; message: string }> => {
+  const resetPassword = async (email: string): Promise<{ success: boolean; message: string }> => {
     const cleanEmail = email.trim().toLowerCase();
     if (!cleanEmail) return { success: false, message: 'Enter your registered email address.' };
 
