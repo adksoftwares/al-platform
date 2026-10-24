@@ -29,21 +29,6 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-/**
- * Legacy accounts used an email-derived Firebase password. This helper exists
- * only to migrate those accounts after the user proves possession of the
- * legacy password AND the old profile password matches. Never use it for new
- * accounts and never persist a password in Realtime Database.
- */
-function legacyFirebasePassword(email: string): string {
-  let hash = 0;
-  const normalized = email.trim().toLowerCase();
-  for (let i = 0; i < normalized.length; i += 1) {
-    hash = ((hash << 5) - hash) + normalized.charCodeAt(i);
-    hash |= 0;
-  }
-  return `AL_App_${hash}_2026!`;
-}
 
 function getErrorMessage(error: unknown, fallback: string): string {
   if (error && typeof error === 'object' && 'message' in error && typeof error.message === 'string') {
@@ -120,30 +105,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       await signInWithEmailAndPassword(auth, cleanEmail, pass);
       return { success: true };
-    } catch (primaryError) {
-      // One-time compatibility migration for accounts created by the previous
-      // app. The legacy deterministic credential is never used for new users.
-      try {
-        const legacyCredential = await signInWithEmailAndPassword(auth, cleanEmail, legacyFirebasePassword(cleanEmail));
-        const userRef = ref(database, `users/${legacyCredential.user.uid}`);
-        const snapshot = await get(userRef);
-        const storedLegacyPassword = snapshot.exists() ? snapshot.val().password : null;
-
-        if (typeof storedLegacyPassword !== 'string' || storedLegacyPassword !== pass) {
-          await signOut(auth);
-          return { success: false, error: 'Invalid email or password.' };
-        }
-
-        await updatePassword(legacyCredential.user, pass);
-        // Firebase Auth now owns the credential; remove the old plaintext copy.
-        await update(userRef, { password: null });
-        return { success: true };
-      } catch {
-        return {
-          success: false,
-          error: getErrorMessage(primaryError, 'Invalid email or password.'),
-        };
-      }
+    } catch {
+      // Never attempt predictable legacy credentials: anyone who knows an
+      // email address could otherwise impersonate the account. Legacy users
+      // must use verified Firebase password recovery.
+      return {
+        success: false,
+        error: 'Invalid email or password. If this is an older account, use Forgot Password to secure it first.',
+      };
     }
   };
 
