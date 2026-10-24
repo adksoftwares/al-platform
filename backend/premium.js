@@ -113,7 +113,7 @@ router.post('/downloads/consume', async (req, res) => {
       if (!user) return;
       const now = Date.now();
       const expiry = Number(user.premiumExpiry || user.premiumValidUntil || 0);
-      const premium = user.isPremium === true && (expiry === 0 || expiry > now);
+      const premium = user.isPremium === true && (expiry > now);
       const storedCount = Number(user.freeDownloadsCount || 0);
       const count = Number.isFinite(storedCount) ? Math.max(0, Math.floor(storedCount)) : 0;
 
