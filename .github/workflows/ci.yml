@@ -38,6 +38,12 @@ jobs:
           cache: npm
           cache-dependency-path: web/package-lock.json
       - run: npm ci
+      - name: Inspect patched build-tool lock entries
+        continue-on-error: true
+        run: |
+          git show HEAD:web/package-lock.json > /tmp/original-lock.json
+          npm update vite source-map-js --package-lock-only || true
+          node -e "const fs=require('node:fs'); const old=JSON.parse(fs.readFileSync('/tmp/original-lock.json')); const next=JSON.parse(fs.readFileSync('package-lock.json')); const keys=new Set([...Object.keys(old.packages),...Object.keys(next.packages)]); console.log(JSON.stringify([...keys].filter(k=>JSON.stringify(old.packages[k])!==JSON.stringify(next.packages[k])).map(path=>({path,entry:next.packages[path]})),null,2))"
       - name: Report all dependency advisories
         continue-on-error: true
         run: |
