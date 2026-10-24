@@ -3,3 +3,5 @@ PyPDF2
 google-generativeai
 firebase-admin
 telethon
+python-dotenv
+google-genai
