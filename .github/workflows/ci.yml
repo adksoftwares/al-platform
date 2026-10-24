@@ -32,7 +32,7 @@ jobs:
           const keys = new Set([...Object.keys(oldLock.packages), ...Object.keys(nextLock.packages)]);
           const changed = [...keys]
             .filter((key) => JSON.stringify(oldLock.packages[key]) !== JSON.stringify(nextLock.packages[key])
-              && /(grpc-js|proto-loader|ordered-map|body-parser|node-forge|proxy-addr|qs|uuid)/.test(key))
+              && /(firebase-admin|google-cloud|google-gax|gaxios|teeny-request|retry-request|grpc-js|proto-loader|ordered-map|body-parser|node-forge|proxy-addr|qs|uuid)/.test(key))
             .map((path) => ({ path, entry: nextLock.packages[path] }));
           console.log(JSON.stringify({ root: nextLock.packages[''], changed }, null, 2));
           NODE
