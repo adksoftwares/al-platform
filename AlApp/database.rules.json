@@ -93,7 +93,6 @@
       ".write": "auth != null && auth.token.admin == true"
     },
     "files": {
-      ".read": "auth != null",
       ".write": "auth != null && auth.token.admin == true",
       "$subject": {
         "elaborations": {
