@@ -35,22 +35,22 @@
         ".read": "auth != null && (auth.uid == $uid || auth.token.admin == true)",
         ".write": "auth != null && (auth.uid == $uid || auth.token.admin == true)",
         "isAdmin": {
-          ".validate": "auth.token.admin == true || (!newData.exists() && !data.exists()) || (newData.val() == data.val())"
+          ".validate": "(!newData.exists() && !data.exists()) || (newData.val() == data.val())"
         },
         "isPremium": {
-          ".validate": "auth.token.admin == true || (!data.exists() && newData.val() == false) || (newData.val() == data.val())"
+          ".validate": "(!data.exists() && newData.val() == false) || (newData.val() == data.val())"
         },
         "premiumExpiry": {
-          ".validate": "auth.token.admin == true || (!newData.exists() && !data.exists()) || (newData.val() == data.val())"
+          ".validate": "(!newData.exists() && !data.exists()) || (newData.val() == data.val())"
         },
         "premiumValidUntil": {
-          ".validate": "auth.token.admin == true || (!newData.exists() && !data.exists()) || (newData.val() == data.val())"
+          ".validate": "(!newData.exists() && !data.exists()) || (newData.val() == data.val())"
         },
         "freeDownloadsCount": {
-          ".validate": "auth.token.admin == true || (!data.exists() && newData.val() == 0) || (newData.val() == data.val())"
+          ".validate": "(!data.exists() && newData.val() == 0) || (newData.val() == data.val())"
         },
         "password": {
-          ".validate": "auth.token.admin == true || (!newData.exists()) || (newData.val() == data.val())"
+          ".validate": "(!newData.exists()) || (newData.val() == data.val())"
         }
       }
     },
