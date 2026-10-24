@@ -5,10 +5,9 @@ import {
   createUserWithEmailAndPassword,
   sendPasswordResetEmail,
   signOut,
-  updatePassword,
   type User,
 } from 'firebase/auth';
-import { ref, onValue, get, set, update } from 'firebase/database';
+import { ref, onValue, set, update } from 'firebase/database';
 import { auth, database } from '../config/firebase';
 import type { UserProfile } from '../types';
 
