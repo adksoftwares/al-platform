@@ -6,6 +6,8 @@ plugins {
     id("com.google.firebase.crashlytics")
 }
 
+val backendBaseUrl = providers.gradleProperty("backendBaseUrl").orElse("").get()
+
 android {
     namespace = "com.altamil.education"
     compileSdk = 36
@@ -16,6 +18,7 @@ android {
         targetSdk = 36
         versionCode = 3
         versionName = "3.0"
+        buildConfigField("String", "BACKEND_BASE_URL", "\"$backendBaseUrl\"")
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
@@ -43,6 +46,7 @@ android {
     }
     buildFeatures {
         compose = true
+        buildConfig = true
     }
     packaging {
         resources {

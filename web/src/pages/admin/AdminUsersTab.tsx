@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { ref, onValue, update } from 'firebase/database';
+import { ref, onValue } from 'firebase/database';
 import { Search, Crown, Loader2 } from 'lucide-react';
 import { database } from '../../config/firebase';
+import { useAuth } from '../../context/AuthContext';
 
 interface AdminUserItem {
   uid: string;
@@ -14,9 +15,12 @@ interface AdminUserItem {
 }
 
 export const AdminUsersTab: React.FC = () => {
+  const { currentUser } = useAuth();
   const [users, setUsers] = useState<AdminUserItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
+  const [savingUid, setSavingUid] = useState<string | null>(null);
+  const [actionError, setActionError] = useState('');
 
   useEffect(() => {
     const usersRef = ref(database, 'users');
@@ -49,10 +53,35 @@ export const AdminUsersTab: React.FC = () => {
   }, []);
 
   const handleTogglePremium = async (uid: string, currentStatus: boolean) => {
-    const newStatus = !currentStatus;
-    await update(ref(database, `users/${uid}`), {
-      isPremium: newStatus,
-    });
+    if (!currentUser) {
+      setActionError('Your session expired. Please sign in again.');
+      return;
+    }
+    const baseUrl = (import.meta.env.VITE_BACKEND_BASE_URL || '').trim().replace(/\/+$/, '');
+    if (!baseUrl.startsWith('https://')) {
+      setActionError('Secure admin service is not configured.');
+      return;
+    }
+
+    setSavingUid(uid);
+    setActionError('');
+    try {
+      const token = await currentUser.getIdToken();
+      const response = await fetch(`${baseUrl}/api/admin/premium`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ targetUid: uid, enabled: !currentStatus }),
+      });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(result.error || 'Could not update premium access.');
+    } catch (error) {
+      setActionError(error instanceof Error ? error.message : 'Could not update premium access.');
+    } finally {
+      setSavingUid(null);
+    }
   };
 
   const filteredUsers = users.filter((u) =>
@@ -91,6 +120,12 @@ export const AdminUsersTab: React.FC = () => {
           <span>Showing <strong>{filteredUsers.length}</strong> of <strong>{users.length}</strong> students</span>
         </div>
       </div>
+
+      {actionError && (
+        <div role="alert" className="rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-xs text-red-300">
+          {actionError}
+        </div>
+      )}
 
       {/* Users List */}
       <div className="grid grid-cols-1 gap-3">
@@ -140,7 +175,9 @@ export const AdminUsersTab: React.FC = () => {
               <button
                 type="button"
                 onClick={() => handleTogglePremium(user.uid, user.isPremium)}
-                className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                disabled={savingUid === user.uid}
+                aria-label={user.isPremium ? `Revoke premium for ${user.name}` : `Grant 30-day premium to ${user.name}`}
+                className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none disabled:opacity-50 ${
                   user.isPremium ? 'bg-yellow-500' : 'bg-slate-800 border-slate-700'
                 }`}
                 title={user.isPremium ? 'Revoke Premium' : 'Grant Premium'}

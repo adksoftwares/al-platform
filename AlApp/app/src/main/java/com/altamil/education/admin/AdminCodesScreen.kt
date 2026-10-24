@@ -66,6 +66,7 @@ import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.ValueEventListener
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
+import java.security.SecureRandom
 
 data class AccessCode(
     val code: String,
@@ -136,7 +137,7 @@ fun AdminCodesScreen() {
                     isGenerating = true
                     coroutineScope.launch {
                         try {
-                            val newCodes = generateRandomCodes(10)
+                            val newCodes = generateRandomCodes(10, codes.map { it.code }.toSet())
                             val updates = mutableMapOf<String, Any>()
                             for (c in newCodes) {
                                 updates[c] =
@@ -285,12 +286,17 @@ fun CodeCard(
     }
 }
 
-fun generateRandomCodes(count: Int): List<String> {
+fun generateRandomCodes(count: Int, existingCodes: Set<String> = emptySet()): List<String> {
+    require(count in 1..1000) { "Code count must be between 1 and 1000." }
     val chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
-    val list = mutableListOf<String>()
-    for (i in 0 until count) {
-        val code = (1..12).map { chars.random() }.joinToString("")
-        list.add(code)
+    val random = SecureRandom()
+    val knownCodes = existingCodes.toMutableSet()
+    val generated = mutableListOf<String>()
+    while (generated.size < count) {
+        val code = buildString(12) {
+            repeat(12) { append(chars[random.nextInt(chars.length)]) }
+        }
+        if (knownCodes.add(code)) generated.add(code)
     }
-    return list
+    return generated
 }

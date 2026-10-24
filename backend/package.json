@@ -4,11 +4,18 @@
   "description": "Backend Webhook for PayHere Integration",
   "main": "index.js",
   "scripts": {
-    "start": "node index.js"
+    "start": "node index.js",
+    "test": "node --test"
   },
   "dependencies": {
-    "body-parser": "^1.20.2",
     "express": "^4.19.2",
-    "firebase-admin": "^12.1.1"
+    "firebase-admin": "^14.5.0"
+  },
+  "overrides": {
+    "@grpc/grpc-js": "1.14.6",
+    "body-parser": "1.20.9",
+    "proxy-addr": "2.0.8",
+    "uuid": "11.1.1",
+    "qs": "6.16.1"
   }
 }

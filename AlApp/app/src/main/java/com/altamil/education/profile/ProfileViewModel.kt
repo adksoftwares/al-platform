@@ -17,6 +17,7 @@ package com.altamil.education.profile
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.altamil.education.BuildConfig
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
@@ -24,8 +25,17 @@ import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.ValueEventListener
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.tasks.await
+import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.OkHttpClient
+import okhttp3.Request
+import okhttp3.RequestBody.Companion.toRequestBody
+import org.json.JSONObject
+import java.io.IOException
+import java.util.concurrent.TimeUnit
 
 data class UserProfileState(
     val name: String = "",
@@ -38,9 +48,21 @@ data class UserProfileState(
     val isLoading: Boolean = true,
 )
 
+private data class DownloadConsumeResult(
+    val status: Int,
+    val allowed: Boolean,
+    val message: String?,
+    val count: Int,
+)
+
 class ProfileViewModel : ViewModel() {
     private val auth = FirebaseAuth.getInstance()
     private val database = FirebaseDatabase.getInstance().getReference("users")
+    private val http = OkHttpClient.Builder()
+        .connectTimeout(10, TimeUnit.SECONDS)
+        .readTimeout(15, TimeUnit.SECONDS)
+        .callTimeout(20, TimeUnit.SECONDS)
+        .build()
 
     private val _uiState = MutableStateFlow(UserProfileState())
     val uiState: StateFlow<UserProfileState> = _uiState
@@ -58,7 +80,7 @@ class ProfileViewModel : ViewModel() {
                     if (snapshot.exists()) {
                         val dbIsPremium = snapshot.child("isPremium").value as? Boolean ?: false
                         val expiry = snapshot.child("premiumExpiry").value as? Long ?: 0L
-                        val isPremium = dbIsPremium && (expiry == 0L || expiry > System.currentTimeMillis())
+                        val isPremium = dbIsPremium && expiry > System.currentTimeMillis()
 
                         _uiState.value =
                             UserProfileState(
@@ -101,13 +123,61 @@ class ProfileViewModel : ViewModel() {
         }
     }
 
-    fun incrementDownloadCount() {
-        val userId = auth.currentUser?.uid ?: return
-        val currentCount = _uiState.value.freeDownloadsCount
-        val newCount = currentCount + 1
+    fun consumeFreeDownload(onResult: (allowed: Boolean, message: String?) -> Unit) {
+        val user = auth.currentUser
+        if (user == null) {
+            onResult(false, "You must be logged in.")
+            return
+        }
 
-        database.child(userId).child("freeDownloadsCount").setValue(newCount).addOnSuccessListener {
-            _uiState.value = _uiState.value.copy(freeDownloadsCount = newCount)
+        viewModelScope.launch {
+            try {
+                val baseUrl = BuildConfig.BACKEND_BASE_URL.trim().trimEnd('/')
+                if (!baseUrl.startsWith("https://")) {
+                    onResult(false, "Secure download service is not configured.")
+                    return@launch
+                }
+                val token = user.getIdToken(false).await().token
+                    ?: run {
+                        onResult(false, "Your session expired. Please log in again.")
+                        return@launch
+                    }
+                val requestBody = "{}".toRequestBody("application/json; charset=utf-8".toMediaType())
+                val request = Request.Builder()
+                    .url("$baseUrl/api/downloads/consume")
+                    .header("Authorization", "Bearer $token")
+                    .post(requestBody)
+                    .build()
+
+                val result = withContext(Dispatchers.IO) {
+                    http.newCall(request).execute().use { response ->
+                        val raw = response.body?.string().orEmpty()
+                        val json = try { JSONObject(raw) } catch (_: Exception) { JSONObject() }
+                        DownloadConsumeResult(
+                            status = response.code,
+                            allowed = json.optBoolean("allowed", false),
+                            message = json.optString("error").takeIf { it.isNotBlank() },
+                            count = json.optInt("count", -1),
+                        )
+                    }
+                }
+
+                val status = result.status
+                val allowed = result.allowed
+                val message = result.message
+                val count = result.count
+                if (count >= 0) _uiState.value = _uiState.value.copy(freeDownloadsCount = count)
+
+                if (status in 200..299 && allowed) {
+                    onResult(true, null)
+                } else {
+                    onResult(false, message ?: "Could not verify download allowance.")
+                }
+            } catch (_: IOException) {
+                onResult(false, "Could not connect to the secure download service.")
+            } catch (_: Exception) {
+                onResult(false, "Could not verify download allowance.")
+            }
         }
     }
 

@@ -55,7 +55,7 @@ class AdminDashboardViewModel : ViewModel() {
                         val email = userSnapshot.child("email").value?.toString() ?: "No Email"
                         val dbIsPremium = userSnapshot.child("isPremium").value as? Boolean ?: false
                         val expiry = userSnapshot.child("premiumExpiry").value as? Long ?: 0L
-                        val isPremium = dbIsPremium && (expiry == 0L || expiry > System.currentTimeMillis())
+                        val isPremium = dbIsPremium && expiry > System.currentTimeMillis()
 
                         list.add(AdminUserItem(uid, name, email, isPremium))
                     }

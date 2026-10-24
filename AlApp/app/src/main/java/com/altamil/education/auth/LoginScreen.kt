@@ -271,8 +271,6 @@ fun LoginScreen(
 
     if (showResetDialog) {
         var resetEmail by remember { mutableStateOf(email) }
-        var resetPhone by remember { mutableStateOf("") }
-        var resetNewPassword by remember { mutableStateOf("") }
         var isResetting by remember { mutableStateOf(false) }
 
         AlertDialog(
@@ -280,24 +278,11 @@ fun LoginScreen(
             title = { Text("Reset Password") },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text("Enter your email and registered phone number to set a new password directly.")
+                    Text("Enter your registered email address. We’ll send a secure password-reset link if the account exists.")
                     OutlinedTextField(
                         value = resetEmail,
                         onValueChange = { resetEmail = it },
                         label = { Text("Email Address") },
-                        modifier = Modifier.fillMaxWidth(),
-                    )
-                    OutlinedTextField(
-                        value = resetPhone,
-                        onValueChange = { resetPhone = it },
-                        label = { Text("Registered Phone Number") },
-                        modifier = Modifier.fillMaxWidth(),
-                    )
-                    OutlinedTextField(
-                        value = resetNewPassword,
-                        onValueChange = { resetNewPassword = it },
-                        label = { Text("New Password") },
-                        visualTransformation = PasswordVisualTransformation(),
                         modifier = Modifier.fillMaxWidth(),
                     )
                 }
@@ -305,13 +290,13 @@ fun LoginScreen(
             confirmButton = {
                 Button(
                     onClick = {
-                        if (resetEmail.isBlank() || resetPhone.isBlank() || resetNewPassword.isBlank()) {
+                        if (resetEmail.isBlank()) {
                             android.widget.Toast
                                 .makeText(context, "Please fill in all fields", android.widget.Toast.LENGTH_SHORT)
                                 .show()
                         } else {
                             isResetting = true
-                            viewModel.resetPassword(resetEmail, resetPhone, resetNewPassword) { success, msg ->
+                            viewModel.resetPassword(resetEmail) { success, msg ->
                                 isResetting = false
                                 android.widget.Toast
                                     .makeText(context, msg, android.widget.Toast.LENGTH_LONG)
@@ -327,7 +312,7 @@ fun LoginScreen(
                     if (isResetting) {
                         CircularProgressIndicator(modifier = Modifier.size(20.dp), color = MaterialTheme.colorScheme.onPrimary)
                     } else {
-                        Text("Reset")
+                        Text("Send Reset Link")
                     }
                 }
             },

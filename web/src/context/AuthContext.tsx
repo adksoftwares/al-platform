@@ -1,13 +1,13 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { 
-  onAuthStateChanged, 
-  signInWithEmailAndPassword, 
-  createUserWithEmailAndPassword, 
+import {
+  onIdTokenChanged,
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
+  sendPasswordResetEmail,
   signOut,
-  updatePassword,
-  type User 
+  type User,
 } from 'firebase/auth';
-import { ref, onValue, get, set, update } from 'firebase/database';
+import { ref, onValue, set, update } from 'firebase/database';
 import { auth, database } from '../config/firebase';
 import type { UserProfile } from '../types';
 
@@ -19,128 +19,99 @@ interface AuthContextType {
   isLoading: boolean;
   login: (email: string, pass: string) => Promise<{ success: boolean; error?: string }>;
   register: (name: string, email: string, pass: string, phone: string, district: string) => Promise<{ success: boolean; error?: string }>;
-  resetPassword: (email: string, phone: string, newPass: string) => Promise<{ success: boolean; message: string }>;
+  resetPassword: (email: string) => Promise<{ success: boolean; message: string }>;
   logout: () => Promise<void>;
   updateProfile: (district: string, phone: string, language: string) => Promise<void>;
-  incrementDownloadCount: () => Promise<void>;
-  unlockPremium: () => Promise<void>;
+  incrementDownloadCount: () => Promise<boolean>;
+  redeemPremiumCode: (code: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-export function javaHashCode(str: string): number {
-  let hash = 0;
-  for (let i = 0; i < str.length; i++) {
-    const char = str.charCodeAt(i);
-    hash = ((hash << 5) - hash) + char;
-    hash |= 0; // Convert to 32-bit integer
-  }
-  return hash;
-}
 
-export function getFirebaseAuthPassword(email: string): string {
-  return `AL_App_${javaHashCode(email.trim().toLowerCase())}_2026!`;
+function getErrorMessage(error: unknown, fallback: string): string {
+  if (error && typeof error === 'object' && 'message' in error && typeof error.message === 'string') {
+    return error.message;
+  }
+  return fallback;
 }
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const unsubscribeAuth = onAuthStateChanged(auth, (user) => {
-      setCurrentUser(user);
-      if (user) {
-        const userRef = ref(database, `users/${user.uid}`);
-        const unsubscribeProfile = onValue(userRef, (snapshot) => {
-          if (snapshot.exists()) {
-            const data = snapshot.val();
-            const expiry = data.premiumExpiry || 0;
-            const isPremiumValid = Boolean(data.isPremium) && (expiry === 0 || expiry > Date.now());
+    let unsubscribeProfile: (() => void) | undefined;
 
-            setUserProfile({
-              uid: user.uid,
-              name: data.name || '',
-              email: data.email || user.email || '',
-              phone: data.phone || '',
-              district: data.district || '',
-              isPremium: isPremiumValid,
-              premiumExpiry: expiry,
-              isAdmin: Boolean(data.isAdmin || data.email === 'admin@example.com' || data.email === 'arikarran14@gmail.com'),
-              language: data.language || 'tamil',
-              freeDownloadsCount: Number(data.freeDownloadsCount || 0)
-            });
-          } else {
-            // New or fallback profile
-            setUserProfile({
-              uid: user.uid,
-              name: user.displayName || user.email?.split('@')[0] || 'Student',
-              email: user.email || '',
-              phone: '',
-              district: '',
-              isPremium: false,
-              isAdmin: user.email === 'admin@example.com' || user.email === 'arikarran14@gmail.com',
-              language: 'tamil',
-              freeDownloadsCount: 0
-            });
-          }
+    const unsubscribeAuth = onIdTokenChanged(auth, async (user) => {
+      unsubscribeProfile?.();
+      unsubscribeProfile = undefined;
+      setCurrentUser(user);
+      setUserProfile(null);
+
+      if (!user) {
+        setIsLoading(false);
+        return;
+      }
+
+      setIsLoading(true);
+      try {
+        // Privileges must come from trusted Firebase custom claims, never a
+        // client-editable profile field or a hard-coded email in the bundle.
+        const token = await user.getIdTokenResult();
+        const trustedAdmin = token.claims.admin === true;
+
+        const userRef = ref(database, `users/${user.uid}`);
+        unsubscribeProfile = onValue(userRef, (snapshot) => {
+          const data = snapshot.exists() ? snapshot.val() : {};
+          const expiry = Number(data.premiumExpiry || data.premiumValidUntil || 0);
+          const premium = data.isPremium === true && expiry > Date.now();
+
+          setUserProfile({
+            uid: user.uid,
+            name: data.name || user.displayName || user.email?.split('@')[0] || 'Student',
+            email: user.email || '',
+            phone: data.phone || '',
+            district: data.district || '',
+            isPremium: premium,
+            premiumExpiry: expiry,
+            isAdmin: trustedAdmin,
+            language: data.language || 'tamil',
+            freeDownloadsCount: Number(data.freeDownloadsCount || 0),
+          });
           setIsLoading(false);
         }, (error) => {
-          console.error("Profile load error:", error);
+          console.error('Profile load error:', error);
           setIsLoading(false);
         });
-
-        return () => unsubscribeProfile();
-      } else {
-        setUserProfile(null);
+      } catch (error) {
+        console.error('Could not load trusted account claims:', error);
         setIsLoading(false);
       }
     });
 
-    return () => unsubscribeAuth();
+    return () => {
+      unsubscribeProfile?.();
+      unsubscribeAuth();
+    };
   }, []);
 
   const login = async (email: string, pass: string): Promise<{ success: boolean; error?: string }> => {
     const cleanEmail = email.trim().toLowerCase();
-    const cleanPass = pass.trim();
-    const standardPass = getFirebaseAuthPassword(cleanEmail);
+    if (!cleanEmail || !pass) return { success: false, error: 'Enter your email and password.' };
 
     try {
-      // 1. Try signing in with standardized hashed password
-      const cred = await signInWithEmailAndPassword(auth, cleanEmail, standardPass);
-      const uid = cred.user.uid;
-      const userRef = ref(database, `users/${uid}`);
-      const snap = await get(userRef);
-
-      if (snap.exists()) {
-        const dbPass = snap.val().password;
-        if (!dbPass || dbPass === cleanPass) {
-          if (!dbPass) {
-            await update(userRef, { password: cleanPass });
-          }
-          return { success: true };
-        } else {
-          await signOut(auth);
-          return { success: false, error: 'Invalid email or password' };
-        }
-      } else {
-        await update(userRef, { password: cleanPass });
-        return { success: true };
-      }
-    } catch (err: any) {
-      // 2. Fallback to direct password authentication for older accounts
-      try {
-        const credOld = await signInWithEmailAndPassword(auth, cleanEmail, cleanPass);
-        const uid = credOld.user.uid;
-        // Migrate to standard password
-        if (auth.currentUser) {
-          await updatePassword(auth.currentUser, standardPass);
-          await update(ref(database, `users/${uid}`), { password: cleanPass });
-        }
-        return { success: true };
-      } catch (oldErr: any) {
-        return { success: false, error: oldErr.message || 'Invalid email or password' };
-      }
+      await signInWithEmailAndPassword(auth, cleanEmail, pass);
+      return { success: true };
+    } catch {
+      // Never attempt predictable legacy credentials: anyone who knows an
+      // email address could otherwise impersonate the account. Legacy users
+      // must use verified Firebase password recovery.
+      return {
+        success: false,
+        error: 'Invalid email or password. If this is an older account, use Forgot Password to secure it first.',
+      };
     }
   };
 
@@ -149,66 +120,45 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     email: string,
     pass: string,
     phone: string,
-    district: string
+    district: string,
   ): Promise<{ success: boolean; error?: string }> => {
     const cleanEmail = email.trim().toLowerCase();
-    const standardPass = getFirebaseAuthPassword(cleanEmail);
+    if (name.trim().length < 2 || !cleanEmail || pass.length < 8) {
+      return { success: false, error: 'Enter your name, a valid email, and a password of at least 8 characters.' };
+    }
 
     try {
-      const cred = await createUserWithEmailAndPassword(auth, cleanEmail, standardPass);
-      const uid = cred.user.uid;
-
-      const profileData: any = {
+      const credential = await createUserWithEmailAndPassword(auth, cleanEmail, pass);
+      const profileData = {
         name: name.trim(),
         email: cleanEmail,
-        password: pass,
         phone: phone.trim(),
         district: district.trim(),
         isPremium: false,
-        isAdmin: cleanEmail === 'admin@example.com' || cleanEmail === 'arikarran14@gmail.com',
         language: 'tamil',
         freeDownloadsCount: 0,
-        createdAt: Date.now()
+        createdAt: Date.now(),
       };
-
-      await set(ref(database, `users/${uid}`), profileData);
+      await set(ref(database, `users/${credential.user.uid}`), profileData);
       return { success: true };
-    } catch (err: any) {
-      return { success: false, error: err.message || 'Registration failed' };
+    } catch (error) {
+      return { success: false, error: getErrorMessage(error, 'Registration failed.') };
     }
   };
 
-  const resetPassword = async (
-    email: string,
-    phone: string,
-    newPass: string
-  ): Promise<{ success: boolean; message: string }> => {
+  const resetPassword = async (email: string): Promise<{ success: boolean; message: string }> => {
     const cleanEmail = email.trim().toLowerCase();
-    const cleanPhone = phone.trim();
-    const standardPass = getFirebaseAuthPassword(cleanEmail);
+    if (!cleanEmail) return { success: false, message: 'Enter your registered email address.' };
 
     try {
-      // Sign in temporarily using standard pass
-      const cred = await signInWithEmailAndPassword(auth, cleanEmail, standardPass);
-      const uid = cred.user.uid;
-      const snap = await get(ref(database, `users/${uid}`));
-
-      if (snap.exists()) {
-        const dbPhone = snap.val().phone;
-        if (dbPhone && dbPhone.replace(/[\s-]/g, '') === cleanPhone.replace(/[\s-]/g, '')) {
-          await update(ref(database, `users/${uid}`), { password: newPass });
-          await signOut(auth);
-          return { success: true, message: 'Password reset successfully! Please log in.' };
-        } else {
-          await signOut(auth);
-          return { success: false, message: 'Phone number does not match registered number.' };
-        }
-      } else {
-        await signOut(auth);
-        return { success: false, message: 'User profile not found.' };
-      }
-    } catch (err: any) {
-      return { success: false, message: 'Authentication failed or email address not registered.' };
+      // Phone + email supplied by the client is not proof of identity. Use
+      // Firebase's verified email recovery flow instead of writing a password
+      // field to the database or changing an unverified account credential.
+      await sendPasswordResetEmail(auth, cleanEmail);
+      return { success: true, message: 'If this email is registered, a password-reset link has been sent.' };
+    } catch {
+      // Avoid account enumeration by returning the same user-facing message.
+      return { success: true, message: 'If this email is registered, a password-reset link has been sent.' };
     }
   };
 
@@ -218,28 +168,59 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const updateProfile = async (district: string, phone: string, language: string) => {
-    if (!currentUser) return;
+    if (!currentUser) throw new Error('You must be signed in.');
     await update(ref(database, `users/${currentUser.uid}`), {
       district: district.trim(),
       phone: phone.trim(),
-      language: language.trim().toLowerCase()
+      language: language.trim().toLowerCase(),
     });
   };
 
-  const incrementDownloadCount = async () => {
-    if (!currentUser || !userProfile) return;
-    const currentCount = userProfile.freeDownloadsCount || 0;
-    const nextCount = currentCount + 1;
-    await update(ref(database, `users/${currentUser.uid}`), {
-      freeDownloadsCount: nextCount
+  const getBackendBaseUrl = () => (import.meta.env.VITE_BACKEND_BASE_URL || '').trim().replace(/\/+$/, '');
+
+  const incrementDownloadCount = async (): Promise<boolean> => {
+    if (!currentUser) throw new Error('You must be signed in.');
+    const baseUrl = getBackendBaseUrl();
+    if (!baseUrl.startsWith('https://')) throw new Error('Secure download service is not configured.');
+
+    const token = await currentUser.getIdToken();
+    const response = await fetch(`${baseUrl}/api/downloads/consume`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}` },
     });
+    const result = await response.json().catch(() => ({}));
+    if (response.status === 403 && result.allowed === false) {
+      setUserProfile((profile) => profile ? { ...profile, freeDownloadsCount: Number(result.count || profile.freeDownloadsCount) } : profile);
+      return false;
+    }
+    if (!response.ok) throw new Error(result.error || 'Could not verify download allowance.');
+
+    setUserProfile((profile) => profile ? { ...profile, freeDownloadsCount: Number(result.count ?? profile.freeDownloadsCount) } : profile);
+    return result.allowed === true;
   };
 
-  const unlockPremium = async () => {
-    if (!currentUser) return;
-    await update(ref(database, `users/${currentUser.uid}`), {
-      isPremium: true
+  const redeemPremiumCode = async (code: string): Promise<void> => {
+    if (!currentUser) throw new Error('You must be signed in.');
+    const baseUrl = getBackendBaseUrl();
+    if (!baseUrl.startsWith('https://')) throw new Error('Secure premium service is not configured.');
+
+    const token = await currentUser.getIdToken();
+    const response = await fetch(`${baseUrl}/api/premium/redeem`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ code: code.trim().toUpperCase() }),
     });
+    const result = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(result.error || 'Could not verify the access code.');
+
+    setUserProfile((profile) => profile ? {
+      ...profile,
+      isPremium: true,
+      premiumExpiry: Number(result.premiumExpiry || 0),
+    } : profile);
   };
 
   return (
@@ -247,8 +228,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       value={{
         currentUser,
         userProfile,
-        isAdmin: Boolean(userProfile?.isAdmin),
-        isPremium: Boolean(userProfile?.isPremium),
+        isAdmin: userProfile?.isAdmin === true,
+        isPremium: userProfile?.isPremium === true,
         isLoading,
         login,
         register,
@@ -256,7 +237,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         logout,
         updateProfile,
         incrementDownloadCount,
-        unlockPremium,
+        redeemPremiumCode,
       }}
     >
       {children}
@@ -266,8 +247,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
+  if (!context) throw new Error('useAuth must be used within an AuthProvider');
   return context;
 };

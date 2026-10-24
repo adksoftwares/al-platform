@@ -25,6 +25,7 @@ import android.os.Build
 import android.os.Environment
 import android.widget.Toast
 import androidx.core.content.FileProvider
+import androidx.core.content.ContextCompat
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.FirebaseDatabase
@@ -41,6 +42,16 @@ data class UpdateInfo(
 class AppUpdater(
     private val context: Context,
 ) {
+    private fun isValidApkUrl(rawUrl: String): Boolean = try {
+        val uri = Uri.parse(rawUrl)
+        uri.scheme.equals("https", ignoreCase = true) &&
+            !uri.host.isNullOrBlank() &&
+            uri.userInfo == null &&
+            (uri.port == -1 || uri.port == 443)
+    } catch (_: Exception) {
+        false
+    }
+
     fun checkForUpdate(onResult: (UpdateInfo?) -> Unit) {
         val dbRef = FirebaseDatabase.getInstance().getReference("admin_settings/app_version")
         dbRef.addListenerForSingleValueEvent(
@@ -60,7 +71,11 @@ class AppUpdater(
                                 pInfo.versionCode
                             }
 
-                        if (latestVersion > currentVersion && apkUrl.isNotEmpty()) {
+                        if (latestVersion > currentVersion) {
+                            if (!isValidApkUrl(apkUrl)) {
+                                onResult(null)
+                                return
+                            }
                             onResult(UpdateInfo(true, latestVersion, apkUrl, notes))
                         } else {
                             onResult(UpdateInfo(false, latestVersion, apkUrl, notes))
@@ -78,6 +93,10 @@ class AppUpdater(
     }
 
     fun downloadAndInstallUpdate(apkUrl: String) {
+        if (!isValidApkUrl(apkUrl)) {
+            Toast.makeText(context, "Update URL is invalid. Use a secure HTTPS link.", Toast.LENGTH_LONG).show()
+            return
+        }
         Toast.makeText(context, "Downloading update...", Toast.LENGTH_LONG).show()
 
         val fileName = "update_v${System.currentTimeMillis()}.apk"
@@ -102,29 +121,38 @@ class AppUpdater(
                 ) {
                     val id = intent.getLongExtra(DownloadManager.EXTRA_DOWNLOAD_ID, -1)
                     if (id == downloadId) {
-                        installApk(fileName)
+                        val manager = context.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
+                        val cursor = manager.query(DownloadManager.Query().setFilterById(downloadId))
                         try {
-                            context.unregisterReceiver(this)
-                        } catch (e: Exception) {
-                            e.printStackTrace()
+                            if (cursor != null && cursor.moveToFirst()) {
+                                val status = cursor.getInt(cursor.getColumnIndexOrThrow(DownloadManager.COLUMN_STATUS))
+                                if (status == DownloadManager.STATUS_SUCCESSFUL) {
+                                    installApk(fileName)
+                                } else {
+                                    Toast.makeText(context, "Update download failed. Please try again.", Toast.LENGTH_LONG).show()
+                                }
+                            } else {
+                                Toast.makeText(context, "Could not verify the downloaded update.", Toast.LENGTH_LONG).show()
+                            }
+                        } finally {
+                            cursor?.close()
+                            try {
+                                context.unregisterReceiver(this)
+                            } catch (_: Exception) {
+                                // The receiver may already have been unregistered.
+                            }
                         }
                     }
                 }
             }
 
-        // Register receiver for when download is complete
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            context.registerReceiver(
-                receiver,
-                IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE),
-                Context.RECEIVER_EXPORTED,
-            )
-        } else {
-            context.registerReceiver(
-                receiver,
-                IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE),
-            )
-        }
+        // Only system-originated download completion broadcasts should reach this receiver.
+        ContextCompat.registerReceiver(
+            context,
+            receiver,
+            IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE),
+            ContextCompat.RECEIVER_NOT_EXPORTED,
+        )
     }
 
     private fun installApk(fileName: String) {
@@ -135,7 +163,7 @@ class AppUpdater(
                     fileName,
                 )
 
-            if (file.exists()) {
+            if (file.exists() && file.length() > 0L) {
                 val intent = Intent(Intent.ACTION_VIEW)
                 val uri =
                     FileProvider.getUriForFile(

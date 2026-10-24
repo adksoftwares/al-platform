@@ -1,23 +1,23 @@
-import React from 'react';
+import React, { lazy, Suspense } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { Navbar } from './components/layout/Navbar';
 import { MobileBottomNav } from './components/layout/MobileBottomNav';
 import { Footer } from './components/layout/Footer';
 
-// Pages
-import { LoginPage } from './pages/auth/LoginPage';
-import { RegisterPage } from './pages/auth/RegisterPage';
-import { DashboardPage } from './pages/student/DashboardPage';
-import { FolderViewerPage } from './pages/student/FolderViewerPage';
-import { PdfViewerPage } from './pages/student/PdfViewerPage';
-import { QuizPage } from './pages/student/QuizPage';
-import { UnitQuizSelectPage } from './pages/student/UnitQuizSelectPage';
-import { SuggestMaterialPage } from './pages/student/SuggestMaterialPage';
-import { AnalyticsPage } from './pages/student/AnalyticsPage';
-import { PaymentPage } from './pages/student/PaymentPage';
-import { ProfilePage } from './pages/student/ProfilePage';
-import { AdminDashboardPage } from './pages/admin/AdminDashboardPage';
+// Route-level lazy loading keeps the initial login bundle small.
+const LoginPage = lazy(() => import('./pages/auth/LoginPage').then((module) => ({ default: module.LoginPage })));
+const RegisterPage = lazy(() => import('./pages/auth/RegisterPage').then((module) => ({ default: module.RegisterPage })));
+const DashboardPage = lazy(() => import('./pages/student/DashboardPage').then((module) => ({ default: module.DashboardPage })));
+const FolderViewerPage = lazy(() => import('./pages/student/FolderViewerPage').then((module) => ({ default: module.FolderViewerPage })));
+const PdfViewerPage = lazy(() => import('./pages/student/PdfViewerPage').then((module) => ({ default: module.PdfViewerPage })));
+const QuizPage = lazy(() => import('./pages/student/QuizPage').then((module) => ({ default: module.QuizPage })));
+const UnitQuizSelectPage = lazy(() => import('./pages/student/UnitQuizSelectPage').then((module) => ({ default: module.UnitQuizSelectPage })));
+const SuggestMaterialPage = lazy(() => import('./pages/student/SuggestMaterialPage').then((module) => ({ default: module.SuggestMaterialPage })));
+const AnalyticsPage = lazy(() => import('./pages/student/AnalyticsPage').then((module) => ({ default: module.AnalyticsPage })));
+const PaymentPage = lazy(() => import('./pages/student/PaymentPage').then((module) => ({ default: module.PaymentPage })));
+const ProfilePage = lazy(() => import('./pages/student/ProfilePage').then((module) => ({ default: module.ProfilePage })));
+const AdminDashboardPage = lazy(() => import('./pages/admin/AdminDashboardPage').then((module) => ({ default: module.AdminDashboardPage })));
 
 // Protected Student Shell
 const StudentLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -102,6 +102,14 @@ export const App: React.FC = () => {
   return (
     <BrowserRouter>
       <AuthProvider>
+        <Suspense fallback={
+          <div className="min-h-screen bg-slate-950 flex items-center justify-center text-slate-300">
+            <div className="flex items-center gap-3" role="status" aria-live="polite">
+              <div className="w-6 h-6 rounded-full border-2 border-brand-500 border-t-transparent animate-spin" />
+              <span>Loading page…</span>
+            </div>
+          </div>
+        }>
         <Routes>
           {/* Public Auth Routes */}
           <Route
@@ -208,6 +216,7 @@ export const App: React.FC = () => {
           {/* Catch-all fallback */}
           <Route path="*" element={<Navigate to="/dashboard" replace />} />
         </Routes>
+        </Suspense>
       </AuthProvider>
     </BrowserRouter>
   );

@@ -36,16 +36,22 @@ export const AdminKeysTab: React.FC = () => {
   }, []);
 
   const generateRandomCodes = (count: number = 10): string[] => {
-    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-    const list: string[] = [];
-    for (let i = 0; i < count; i++) {
-      let code = '';
-      for (let j = 0; j < 12; j++) {
-        code += chars.charAt(Math.floor(Math.random() * chars.length));
-      }
-      list.push(code);
+    if (!globalThis.crypto?.getRandomValues) {
+      throw new Error('Secure random generation is unavailable in this browser.');
     }
-    return list;
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    const existing = new Set(codes.map((item) => item.code));
+    const generated = new Set<string>();
+
+    while (generated.size < count) {
+      const bytes = new Uint8Array(12);
+      globalThis.crypto.getRandomValues(bytes);
+      // 36 * 7 = 252; rejecting bytes 252-255 avoids modulo bias.
+      if (bytes.some((byte) => byte >= 252)) continue;
+      const code = Array.from(bytes, (byte) => chars[byte % chars.length]).join('');
+      if (!existing.has(code)) generated.add(code);
+    }
+    return [...generated];
   };
 
   const handleGenerate10 = async () => {

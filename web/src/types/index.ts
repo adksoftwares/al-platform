@@ -2,7 +2,6 @@ export interface UserProfile {
   uid: string;
   name: string;
   email: string;
-  password?: string;
   phone: string;
   district: string;
   isPremium: boolean;

@@ -541,6 +541,7 @@ export const NIE_REJECTED_TERMINOLOGY: NIERejectedRecord[] = [
   { rejectedTerm: "மெய்ப் பக்றீரியா", subject: "biology", reason: "Old 6-kingdom term. Current NIE uses டொமைன் பக்றீரியா / பக்றீரியாக்கள்", mandatoryNIETerm: "பக்றீரியாக்கள் (Bacteria)", nieSourceBook: "NIE Biology Unit 2", dateDetected: "2026-08-30" },
   { rejectedTerm: "Eubacteria", subject: "biology", reason: "Old 6-kingdom English term", mandatoryNIETerm: "Bacteria", nieSourceBook: "NIE Biology Unit 2", dateDetected: "2026-08-30" },
   { rejectedTerm: "இரத்தம்", subject: "biology", reason: "Indian Tamil / colloquial term", mandatoryNIETerm: "குருதி", nieSourceBook: "NIE Biology Unit 5 & 6", dateDetected: "2026-08-30" },
+  { rejectedTerm: "இரத்த ஓட்டம்", subject: "biology", reason: "Non-NIE phrase; use the official Sri Lankan term", mandatoryNIETerm: "குருதி ஓட்டம்", nieSourceBook: "NIE Biology Unit 5 & 6", dateDetected: "2026-10-24" },
   { rejectedTerm: "இரத்தக் குழு", subject: "biology", reason: "NCERT / Indian Tamil term", mandatoryNIETerm: "குருதிப் பிரிவு", nieSourceBook: "NIE Biology Unit 6", dateDetected: "2026-08-30" },
   { rejectedTerm: "தனி செல்", subject: "biology", reason: "Indian Tamil term", mandatoryNIETerm: "கலம்", nieSourceBook: "NIE Biology Unit 3", dateDetected: "2026-08-30" },
   { rejectedTerm: "திசு", subject: "biology", reason: "Indian Tamil term", mandatoryNIETerm: "இழையம்", nieSourceBook: "NIE Biology Unit 4", dateDetected: "2026-08-30" },
