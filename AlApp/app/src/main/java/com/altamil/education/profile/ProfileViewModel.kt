@@ -146,7 +146,7 @@ class ProfileViewModel : ViewModel() {
                     http.newCall(request).execute().use { response ->
                         val raw = response.body?.string().orEmpty()
                         val json = try { JSONObject(raw) } catch (_: Exception) { JSONObject() }
-                        Triple(response.code, json.optBoolean("allowed", false), json.optString("error").ifBlank { null })
+                        Triple(response.code, json.optBoolean("allowed", false), json.optString("error").takeIf { it.isNotBlank() })
                             .let { Triple(it.first, it.second, it.third to json.optInt("count", -1)) }
                     }
                 }
