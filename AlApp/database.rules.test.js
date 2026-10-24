@@ -13,10 +13,11 @@ test('database is closed by default and has no email-based admin shortcut', () =
 
 test('premium entitlements and download quotas cannot be client-modified', () => {
   const user = rules.users.$uid;
-  assert.match(user.isAdmin['.validate'], /auth\.token\.admin == true/);
-  assert.match(user.isPremium['.validate'], /auth\.token\.admin == true/);
-  assert.match(user.premiumExpiry['.validate'], /auth\.token\.admin == true/);
-  assert.match(user.freeDownloadsCount['.validate'], /auth\.token\.admin == true/);
+  for (const field of ['isAdmin', 'isPremium', 'premiumExpiry', 'premiumValidUntil', 'freeDownloadsCount', 'password']) {
+    assert.doesNotMatch(user[field]['.validate'], /auth\.token\.admin/);
+  }
+  assert.match(user.isPremium['.validate'], /newData\.val\(\) == false/);
+  assert.match(user.freeDownloadsCount['.validate'], /newData\.val\(\) == 0/);
   assert.match(user.password['.validate'], /!newData\.exists\(\)/);
 });
 
