@@ -41,6 +41,7 @@ async function getUid(req, res) {
 }
 
 router.post('/premium/redeem', async (req, res) => {
+  try {
   const uid = await getUid(req, res);
   if (!uid) return;
 
@@ -76,8 +77,8 @@ router.post('/premium/redeem', async (req, res) => {
   if (grant.uid !== uid) return res.status(409).json({ error: 'Access code has already been redeemed.' });
 
   const userRef = db.ref('users').child(uid);
-  const userResult = await userRef.transaction((user) => {
-    if (!user) return;
+  const userResult = await userRef.transaction((currentUser) => {
+    const user = currentUser || {};
     const existingExpiry = Number(user.premiumExpiry || user.premiumValidUntil || 0);
     user.isPremium = true;
     user.premiumExpiry = Math.max(existingExpiry, Number(grant.expiresAt));
@@ -90,7 +91,10 @@ router.post('/premium/redeem', async (req, res) => {
     return res.status(500).json({ error: 'The code was accepted but activation is pending. Retry the same code.' });
   }
 
-  return res.status(200).json({ success: true, premiumExpiry: Number(grant.expiresAt) });
+  return res.status(200).json({ success: true, premiumExpiry: Number(userResult.snapshot.val().premiumExpiry) });
+  } catch {
+    return res.status(500).json({ error: 'Could not redeem access code. Please retry the same code.' });
+  }
 });
 
 
