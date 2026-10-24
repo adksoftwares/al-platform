@@ -1,115 +1,282 @@
 const express = require('express');
-const bodyParser = require('body-parser');
-const crypto = require('crypto');
+const crypto = require('node:crypto');
 const admin = require('firebase-admin');
 
-// Initialize Express App
 const app = express();
-app.use(bodyParser.urlencoded({ extended: true }));
-app.use(bodyParser.json());
+app.disable('x-powered-by');
+app.use(express.urlencoded({ extended: false, limit: '16kb' }));
+app.use(express.json({ limit: '16kb' }));
 
-// Health check / Root route
-app.get('/', (req, res) => {
-    res.send(`
-        <div style="font-family: system-ui, -apple-system, sans-serif; max-width: 600px; margin: 50px auto; padding: 24px; border-radius: 12px; border: 1px solid #e2e8f0; background: #f8fafc; text-align: center;">
-            <h2 style="color: #0f172a; margin-bottom: 8px;">🚀 AlApp Backend Server</h2>
-            <p style="color: #22c55e; font-weight: bold; margin-bottom: 16px;">Status: Online & Ready</p>
-            <p style="color: #64748b; font-size: 14px;">Webhooks endpoint: <code>/payhere/notify</code></p>
-            <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 20px 0;" />
-            <p style="color: #334155; font-size: 14px;">Looking for the web frontend? Open <a href="http://localhost:5173" style="color: #3b82f6; text-decoration: underline;">http://localhost:5173</a></p>
-        </div>
-    `);
+const PREMIUM_AMOUNT = '500.00';
+const PREMIUM_CURRENCY = 'LKR';
+const PREMIUM_DURATION_MS = 30 * 24 * 60 * 60 * 1000;
+const WINDOW_MS = 60_000;
+const MAX_REQUESTS_PER_WINDOW = 30;
+const rateLimits = new Map();
+
+function safeEqualHex(left, right) {
+  if (typeof left !== 'string' || typeof right !== 'string') return false;
+  const a = Buffer.from(left, 'utf8');
+  const b = Buffer.from(right, 'utf8');
+  return a.length === b.length && crypto.timingSafeEqual(a, b);
+}
+
+function normalizeAmount(value) {
+  if (typeof value !== 'string' && typeof value !== 'number') return null;
+  const amount = String(value).trim();
+  if (!/^\d{1,8}(?:\.\d{1,2})?$/.test(amount)) return null;
+  return Number(amount).toFixed(2);
+}
+
+function rateLimit(req, res, next) {
+  const key = req.ip || req.socket.remoteAddress || 'unknown';
+  const now = Date.now();
+  const previous = rateLimits.get(key);
+  if (!previous || now - previous.start >= WINDOW_MS) {
+    rateLimits.set(key, { start: now, count: 1 });
+    return next();
+  }
+  previous.count += 1;
+  if (previous.count > MAX_REQUESTS_PER_WINDOW) {
+    res.set('Retry-After', String(Math.ceil((WINDOW_MS - (now - previous.start)) / 1000)));
+    return res.status(429).json({ error: 'Too many requests. Try again shortly.' });
+  }
+  return next();
+}
+
+app.use(rateLimit);
+
+function initializeFirebaseAdmin() {
+  if (admin.apps.length) return true;
+  const serviceAccountText = process.env.FIREBASE_SERVICE_ACCOUNT;
+  const databaseURL = process.env.FIREBASE_DB_URL || process.env.FIREBASE_DATABASE_URL;
+  if (!serviceAccountText || !databaseURL) return false;
+
+  try {
+    const serviceAccount = JSON.parse(serviceAccountText);
+    admin.initializeApp({
+      credential: admin.credential.cert(serviceAccount),
+      databaseURL,
+    });
+    return true;
+  } catch (error) {
+    console.error('Firebase Admin configuration is invalid.');
+    return false;
+  }
+}
+
+function requireFirebaseAdmin(res) {
+  if (!initializeFirebaseAdmin()) {
+    res.status(503).json({ error: 'Payment service is not configured.' });
+    return null;
+  }
+  return admin.database();
+}
+
+async function authenticatedUid(req, res) {
+  const authorization = req.get('authorization') || '';
+  const match = authorization.match(/^Bearer\s+(.+)$/i);
+  if (!match) {
+    res.status(401).json({ error: 'Authentication required.' });
+    return null;
+  }
+  if (!initializeFirebaseAdmin()) {
+    res.status(503).json({ error: 'Authentication service is not configured.' });
+    return null;
+  }
+  try {
+    const decoded = await admin.auth().verifyIdToken(match[1], true);
+    return decoded.uid;
+  } catch {
+    res.status(401).json({ error: 'Invalid or expired session.' });
+    return null;
+  }
+}
+
+function payHereSecretHash(secret) {
+  return crypto.createHash('md5').update(secret, 'utf8').digest('hex').toUpperCase();
+}
+
+function payHereNotifySignature({ merchantId, orderId, amount, currency, statusCode, secret }) {
+  const hashedSecret = payHereSecretHash(secret);
+  return crypto
+    .createHash('md5')
+    .update(merchantId + orderId + amount + currency + String(statusCode) + hashedSecret, 'utf8')
+    .digest('hex')
+    .toUpperCase();
+}
+
+function payHereCheckoutHash({ merchantId, orderId, amount, currency, secret }) {
+  return crypto
+    .createHash('md5')
+    .update(merchantId + orderId + amount + currency + payHereSecretHash(secret), 'utf8')
+    .digest('hex')
+    .toUpperCase();
+}
+
+app.get('/', (_req, res) => {
+  res.status(200).type('text/plain').send('AL Platform payment service');
 });
 
-// TODO: Replace this with your actual service account key JSON file
-// You can download this from Firebase Console -> Project Settings -> Service Accounts -> Generate New Private Key
-// const serviceAccount = require('./firebase-adminsdk.json');
-
-// Initialize Firebase Admin (Uncomment when you add the JSON file)
-/*
-admin.initializeApp({
-  credential: admin.credential.cert(serviceAccount),
-  databaseURL: "https://your-project-id.firebaseio.com" // Replace with your actual Realtime DB URL
+app.get('/healthz', (_req, res) => {
+  res.status(200).json({
+    status: 'ok',
+    paymentConfigured: Boolean(process.env.PAYHERE_MERCHANT_ID && process.env.PAYHERE_MERCHANT_SECRET),
+    firebaseConfigured: Boolean(process.env.FIREBASE_SERVICE_ACCOUNT && (process.env.FIREBASE_DB_URL || process.env.FIREBASE_DATABASE_URL)),
+  });
 });
-*/
 
-// Your PayHere Merchant Secret (From the PayHere Dashboard)
-const MERCHANT_SECRET = 'MTg5MzIzMDM0NDIxN...'; // IMPORTANT: Put your full secret here
-const MERCHANT_ID = '1236265';
+/**
+ * Create a server-priced PayHere order. The client cannot choose the price,
+ * currency, UID, merchant ID, or signing secret.
+ */
+app.post('/payhere/create-order', async (req, res) => {
+  const uid = await authenticatedUid(req, res);
+  if (!uid) return;
 
+  const merchantId = process.env.PAYHERE_MERCHANT_ID;
+  const secret = process.env.PAYHERE_MERCHANT_SECRET;
+  if (!merchantId || !secret) return res.status(503).json({ error: 'Payment service is not configured.' });
+
+  const db = requireFirebaseAdmin(res);
+  if (!db) return;
+
+  const orderId = crypto.randomUUID();
+  const now = Date.now();
+  const order = {
+    uid,
+    amount: PREMIUM_AMOUNT,
+    currency: PREMIUM_CURRENCY,
+    status: 'pending',
+    createdAt: now,
+    updatedAt: now,
+  };
+
+  try {
+    await db.ref('payment_orders').child(orderId).set(order);
+    return res.status(201).json({
+      merchant_id: merchantId,
+      order_id: orderId,
+      amount: PREMIUM_AMOUNT,
+      currency: PREMIUM_CURRENCY,
+      hash: payHereCheckoutHash({ merchantId, orderId, amount: PREMIUM_AMOUNT, currency: PREMIUM_CURRENCY, secret }),
+      items: 'AL Platform Premium - 30 days',
+    });
+  } catch (error) {
+    console.error('Could not create payment order.');
+    return res.status(500).json({ error: 'Could not create payment order.' });
+  }
+});
+
+/**
+ * PayHere server-to-server notification. Never trust custom_1 or a client
+ * supplied UID; the authenticated user is taken from the server-created order.
+ */
 app.post('/payhere/notify', async (req, res) => {
-    try {
-        const {
-            merchant_id,
-            order_id,
-            payhere_amount,
-            payhere_currency,
-            status_code,
-            md5sig,
-            custom_1 // This will contain the Firebase User ID we passed from the app
-        } = req.body;
+  const merchantId = process.env.PAYHERE_MERCHANT_ID;
+  const secret = process.env.PAYHERE_MERCHANT_SECRET;
+  if (!merchantId || !secret) return res.status(503).send('Payment service is not configured.');
 
-        // 1. Verify it's for our merchant ID
-        if (merchant_id !== MERCHANT_ID) {
-            console.error('Invalid merchant ID');
-            return res.status(400).send('Invalid merchant ID');
-        }
+  const {
+    merchant_id: receivedMerchantId,
+    order_id: orderId,
+    payhere_amount: receivedAmount,
+    payhere_currency: currency,
+    status_code: statusCode,
+    md5sig,
+    payment_id: paymentId,
+  } = req.body || {};
 
-        // 2. Generate the MD5 signature locally to verify PayHere sent it
-        const hashedSecret = crypto.createHash('md5').update(MERCHANT_SECRET).digest('hex').toUpperCase();
-        
-        // Format: merchant_id + order_id + payhere_amount + payhere_currency + status_code + strtoupper(md5(payhere_secret))
-        const sigString = merchant_id + order_id + payhere_amount + payhere_currency + status_code + hashedSecret;
-        
-        const generatedSig = crypto.createHash('md5').update(sigString).digest('hex').toUpperCase();
+  if (
+    typeof orderId !== 'string' ||
+    !/^[0-9a-f-]{36}$/i.test(orderId) ||
+    receivedMerchantId !== merchantId ||
+    currency !== PREMIUM_CURRENCY ||
+    normalizeAmount(receivedAmount) !== PREMIUM_AMOUNT
+  ) {
+    return res.status(400).send('Invalid payment details.');
+  }
 
-        // 3. Compare signatures
-        if (generatedSig !== md5sig) {
-            console.error('Signature mismatch! Potential spoofing attack.');
-            console.error(`Expected: ${generatedSig}, Got: ${md5sig}`);
-            return res.status(400).send('Invalid signature');
-        }
+  const expectedSignature = payHereNotifySignature({
+    merchantId: receivedMerchantId,
+    orderId,
+    amount: String(receivedAmount),
+    currency,
+    statusCode,
+    secret,
+  });
+  if (!safeEqualHex(expectedSignature, md5sig)) return res.status(400).send('Invalid signature.');
 
-        // 4. Check if payment was successful (status_code 2 means success)
-        if (status_code === '2' || status_code === 2) {
-            const userId = custom_1;
-            
-            if (!userId) {
-                console.error('No User ID provided in custom_1');
-                return res.status(400).send('User ID missing');
-            }
+  // PayHere uses status code 2 for a successful payment. Other valid statuses
+  // are acknowledged but never grant premium access.
+  if (String(statusCode) !== '2') return res.status(200).send('Non-success status acknowledged.');
 
-            console.log(`Payment successful for user: ${userId}. Upgrading to Premium...`);
+  const db = requireFirebaseAdmin(res);
+  if (!db) return;
 
-            // 5. Update Firebase Realtime Database
-            // Uncomment the below lines once you have added your Firebase Service Account JSON
-            /*
-            const db = admin.database();
-            const userRef = db.ref(`users/${userId}`);
-            await userRef.update({
-                isPremium: true,
-                premiumValidUntil: Date.now() + (30 * 24 * 60 * 60 * 1000) // Example: 30 days
-            });
-            */
-            
-            console.log('Firebase Database updated successfully.');
-            
-            // Return 200 OK to PayHere so they know we received the webhook
-            return res.status(200).send('Payment success recorded.');
-        } else {
-            console.log(`Payment failed or pending. Status Code: ${status_code}`);
-            return res.status(200).send('Ignored non-success status');
-        }
-
-    } catch (error) {
-        console.error('Error processing PayHere webhook:', error);
-        return res.status(500).send('Internal Server Error');
+  try {
+    const orderRef = db.ref('payment_orders').child(orderId);
+    const orderSnapshot = await orderRef.get();
+    const order = orderSnapshot.val();
+    if (!order || order.amount !== PREMIUM_AMOUNT || order.currency !== PREMIUM_CURRENCY) {
+      return res.status(404).send('Unknown order.');
     }
+    if (order.status === 'paid') return res.status(200).send('Payment already recorded.');
+    if (order.status !== 'pending' || typeof order.uid !== 'string') {
+      return res.status(409).send('Order is not payable.');
+    }
+
+    // A per-order grant record makes webhook retries idempotent, including a
+    // retry after a process interruption between entitlement and order updates.
+    const grantRef = db.ref('premium_grants').child(orderId);
+    const grantResult = await grantRef.transaction((existing) => {
+      if (existing) return;
+      return {
+        uid: order.uid,
+        createdAt: Date.now(),
+        expiresAt: Date.now() + PREMIUM_DURATION_MS,
+        paymentId: paymentId ? String(paymentId) : null,
+      };
+    });
+    if (!grantResult.committed || !grantResult.snapshot.exists()) {
+      return res.status(500).send('Could not record entitlement grant.');
+    }
+    const grant = grantResult.snapshot.val();
+    if (grant.uid !== order.uid) return res.status(409).send('Grant owner mismatch.');
+
+    const userRef = db.ref('users').child(order.uid);
+    await userRef.transaction((user) => {
+      if (!user) return;
+      const currentExpiry = Number(user.premiumExpiry || user.premiumValidUntil || 0);
+      user.isPremium = true;
+      user.premiumExpiry = Math.max(currentExpiry, Number(grant.expiresAt));
+      return user;
+    });
+
+    await orderRef.update({
+      status: 'paid',
+      paymentId: paymentId ? String(paymentId) : null,
+      paidAt: Date.now(),
+      updatedAt: Date.now(),
+    });
+    return res.status(200).send('Payment recorded.');
+  } catch (error) {
+    console.error('PayHere notification processing failed.');
+    return res.status(500).send('Could not process payment notification.');
+  }
 });
 
-// Start Server
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-    console.log(`PayHere Webhook Server running on port ${PORT}`);
-    console.log(`Waiting for POST requests at http://localhost:${PORT}/payhere/notify`);
-});
+const port = Number(process.env.PORT || 3000);
+if (require.main === module) {
+  app.listen(port, () => {
+    console.log(`AL Platform payment service listening on port ${port}`);
+  });
+}
+
+module.exports = {
+  app,
+  normalizeAmount,
+  payHereCheckoutHash,
+  payHereNotifySignature,
+  safeEqualHex,
+};
