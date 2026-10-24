@@ -2,7 +2,6 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Sparkles, CheckCircle, TrendingUp, Clock, AlertTriangle, Lightbulb, Star, RotateCcw, Loader2 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
-import { generateStudentAnalytics } from '../../services/geminiService';
 import type { AnalyticsData } from '../../types';
 
 export const AnalyticsPage: React.FC = () => {
@@ -39,6 +38,7 @@ export const AnalyticsPage: React.FC = () => {
     setError(null);
 
     try {
+      const { generateStudentAnalytics } = await import('../../services/geminiService');
       const data = await generateStudentAnalytics(currentUser.uid, lang);
       setAnalytics(data);
     } catch (err: any) {
