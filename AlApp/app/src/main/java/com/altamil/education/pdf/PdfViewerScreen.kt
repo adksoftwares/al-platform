@@ -195,17 +195,18 @@ fun PdfViewerScreen(
                                                     .getReference(
                                                         "users/$userId/history/documents",
                                                     ).push()
-                                            val pagesRead = (1..15).random()
-                                            val timeSpent = (5..45).random()
+                                            // The external PDF viewer does not expose actual reading progress.
+                                            // Record only an open event instead of inventing engagement metrics.
                                             val docData =
                                                 mapOf(
                                                     "id" to historyRef.key,
                                                     "documentName" to file.fileName,
                                                     "topic" to subjectName,
-                                                    "totalPages" to pagesRead + (0..10).random(),
-                                                    "pagesRead" to pagesRead,
-                                                    "timeSpentMinutes" to timeSpent,
-                                                    "highlightsCount" to (0..5).random(),
+                                                    "totalPages" to 0,
+                                                    "pagesRead" to 0,
+                                                    "timeSpentMinutes" to 0,
+                                                    "highlightsCount" to 0,
+                                                    "eventType" to "opened",
                                                     "timestamp" to com.google.firebase.database.ServerValue.TIMESTAMP,
                                                 )
                                             historyRef.setValue(docData)
