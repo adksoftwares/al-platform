@@ -45,26 +45,29 @@ export const PdfViewerPage: React.FC = () => {
   }, [decodedSubject, decodedFolder, userProfile?.language]);
 
   const handleFileAction = async (file: FileMetadata, type: 'view' | 'download') => {
-    const downloadsCount = userProfile?.freeDownloadsCount || 0;
-    if (!isPremium && downloadsCount >= 5) {
-      setShowLimitModal(true);
-      return;
-    }
+    try {
+      if (!isPremium) {
+        const allowed = await incrementDownloadCount();
+        if (!allowed) {
+          setShowLimitModal(true);
+          return;
+        }
+      }
 
-    if (!isPremium) {
-      await incrementDownloadCount();
-    }
-
-    if (type === 'view') {
-      setSelectedFileForViewing(file);
-    } else {
-      const link = document.createElement('a');
-      link.href = file.downloadUrl;
-      link.download = file.fileName;
-      link.target = '_blank';
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
+      if (type === 'view') {
+        setSelectedFileForViewing(file);
+      } else {
+        const link = document.createElement('a');
+        link.href = file.downloadUrl;
+        link.download = file.fileName;
+        link.target = '_blank';
+        link.rel = 'noopener noreferrer';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      }
+    } catch (error) {
+      setErrorMessage(error instanceof Error ? error.message : 'Could not verify download allowance.');
     }
   };
 
