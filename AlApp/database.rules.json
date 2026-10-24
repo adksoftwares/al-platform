@@ -64,8 +64,8 @@
     "suggestions": {
       ".read": "auth != null && auth.token.admin == true",
       "$suggestionId": {
-        ".write": "auth != null && (auth.token.admin == true || (!data.exists() && newData.child('uid').val() == auth.uid))",
-        ".validate": "newData.hasChildren(['fileName', 'subject', 'folder', 'downloadUrl']) && (auth.token.admin == true || newData.child('uid').val() == auth.uid)"
+        ".write": "auth != null && auth.token.admin == true",
+        ".validate": "auth != null && auth.token.admin == true && newData.hasChildren(['fileName', 'subject', 'folder', 'downloadUrl'])"
       }
     },
     "pending_suggestions": {
