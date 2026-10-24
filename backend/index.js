@@ -45,6 +45,7 @@ function rateLimit(req, res, next) {
 }
 
 app.use(rateLimit);
+app.use('/api', require('./premium'));
 
 function initializeFirebaseAdmin() {
   if (admin.apps.length) return true;
@@ -230,7 +231,7 @@ app.post('/payhere/notify', async (req, res) => {
     // retry after a process interruption between entitlement and order updates.
     const grantRef = db.ref('premium_grants').child(orderId);
     const grantResult = await grantRef.transaction((existing) => {
-      if (existing) return;
+      if (existing) return existing;
       return {
         uid: order.uid,
         createdAt: Date.now(),
