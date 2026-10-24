@@ -67,7 +67,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         unsubscribeProfile = onValue(userRef, (snapshot) => {
           const data = snapshot.exists() ? snapshot.val() : {};
           const expiry = Number(data.premiumExpiry || data.premiumValidUntil || 0);
-          const premium = data.isPremium === true && (expiry === 0 || expiry > Date.now());
+          const premium = data.isPremium === true && expiry > Date.now();
 
           setUserProfile({
             uid: user.uid,
